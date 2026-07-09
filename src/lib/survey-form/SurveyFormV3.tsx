@@ -33,7 +33,6 @@ import FormAccess from './Formaccess';
 import FormAreaCondition from './Formareacondition';
 import FormLandPreparation from './Formlandpreparation';
 import FormSoilCondition from './Formsoilcondition';
-import FormInfrastructure from './Forminfrastructure';
 import FormAdditionalInfo from './Formadditionalinfo';
 import AdditionalInfoQuestion from './AdditionalInfoQuestion';
 import { getStage2QuestionDef, type Stage2FieldKey } from './stage2Questions';
@@ -42,8 +41,6 @@ import FormDocumentationUpload from './FormDocumentationUpload';
 import FormAreaPhoto from './FormAreaPhoto';
 import FormUploadTanaman from './FormUploadTanaman';
 import FormSketch from './FormSketch';
-import DatePickerField from './DatePickerField';
-
 interface SurveyFormV2Props {
 	formId: string;
 	surveyData: SurveyFormData;
