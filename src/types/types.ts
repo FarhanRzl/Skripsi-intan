@@ -97,7 +97,6 @@ export interface SurveyFormData {
 	fixedStructures: FixedStructureEntry[];
 
 	// FormAdditionalInfo (Tahap 2 — best-effort, lihat design-survey-report-stage2.ts)
-	areaSunExposureId: string | null;
 	rainGutterNeedId: string | null;
 	childrenPresenceId: string | null;
 	animalPresenceId: string | null;
