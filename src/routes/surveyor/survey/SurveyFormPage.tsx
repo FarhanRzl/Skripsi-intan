@@ -535,28 +535,7 @@ export default function SurveyFormPage() {
 		);
 	}
 
-	function goToStage2(index: string) {
-		const entry = entries.find((e) => e.index === index);
-		if (!entry) return;
-		if (!isStage1Valid(entry)) {
-			setEntries((prev) =>
-				prev.map((e) => (e.index === index ? { ...e, showValidationWarning: true } : e))
-			);
-			addToast({
-				data: {
-					title: 'Masih ada bagian Tahap 1 yang belum lengkap',
-					color: 'red',
-					bg: '#FDE0D5',
-					border: 'red',
-					icon: 'warning'
-				}
-			});
-			return;
-		}
-		setEntries((prev) =>
-			prev.map((e) => (e.index === index ? { ...e, stage: 2, showValidationWarning: false } : e))
-		);
-	}
+
 
 	function backToStage1(index: string) {
 		setEntries((prev) => prev.map((e) => (e.index === index ? { ...e, stage: 1 } : e)));
@@ -1003,14 +982,6 @@ export default function SurveyFormPage() {
 								buttonType="secondary"
 								style="flex-1"
 								action={() => backToStage1(activeEntry.index)}
-							/>
-						)}
-						{activeEntry.stage === 1 && isOngoing && (
-							<Button
-								label="Lanjut ke Tahap 2 (Opsional)"
-								buttonType="secondary"
-								style="flex-1"
-								action={() => goToStage2(activeEntry.index)}
 							/>
 						)}
 					</div>
