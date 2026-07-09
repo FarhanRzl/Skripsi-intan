@@ -1,0 +1,62 @@
+@import "tailwindcss";
+
+/*
+ * Definisikan design tokens (warna brand, dsb) di sini via @theme,
+ * padanan dari tailwind.config.js versi lama.
+ * Isi warna aktual (primary-main, danger-main, neutral-*, dst) perlu
+ * disalin dari tailwind.config.js project Svelte lama.
+ */
+@theme {
+	/* Skala warna "brand" dipakai di src/components/survey-v2/**.
+	 * Diturunkan dari primary-main (#4ea40f) supaya konsisten dengan
+	 * palet hijau OKE Garden yang sudah ada. */
+	--color-brand-50: #f2fbe9;
+	--color-brand-100: #eafacc;
+	--color-brand-500: #4ea40f;
+	--color-brand-600: #3f830d;
+	--color-brand-700: #1b5f04;
+	--color-brand-800: #143f03;
+
+	--color-primary-main: #4ea40f; /* contoh — ganti sesuai tailwind.config.js lama */
+	--color-primary-dark: #1f5c34; /* contoh (dipakai FormOrientation.svelte: text-primary-dark) — ganti sesuai tailwind.config.js lama */
+	--color-primary-3: #4ea40f;
+	--color-primary-surface: #eafacc;
+	--color-danger-main: #db303e;
+	--color-danger-surface: #fde0d5;
+	--color-warning-hover: #D69F02;
+	--color-warning-surface: #FEF7CC;
+	--color-warning-main: #f9c004;
+	--color-warning-6: #f2b705;
+	--color-info-main: #2f80ed;
+	--color-success-main: #3dbf2b;
+	--color-success-hover: #2f9c20;
+	--color-neutral-main: #262626;
+	--color-neutral-2: #404040;
+	--color-neutral-3: #595959;
+	--color-neutral-4: #737373;
+	--color-neutral-5: #8c8c8c;
+	--color-neutral-6: #a6a6a6;
+	--color-neutral-7: #bfbfbf;
+	--color-neutral-8: #f0f0f0;
+	--color-neutral-border: #D2D2D2;
+	--shadow-card: 0px 2px 10px rgba(0, 0, 0, 0.06);
+	--shadow-centered: 0px -4px 20px rgba(0, 0, 0, 0.1);
+}
+
+/*
+ * Padanan <style> block yang diulang di tiap FormAccess/FormAreaCondition/
+ * FormLandPreparation/FormSoilCondition/FormWaterElectricity.svelte, untuk
+ * styling konten HTML (technicalNote) yang dirender lewat {@html ...} di
+ * dalam InsightBox (text-amber-700).
+ */
+.text-amber-700 p {
+	margin-bottom: 0.25rem;
+}
+.text-amber-700 ul {
+	list-style: disc;
+	padding-left: 1rem;
+	margin-top: 0.25rem;
+}
+.text-amber-700 li {
+	margin-bottom: 0.15rem;
+}

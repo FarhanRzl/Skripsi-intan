@@ -1,0 +1,32 @@
+<svg width="160" height="130" viewBox="0 0 160 130" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Leaves background -->
+  <path d="M6 128C6 100 26 78 54 78C54 106 34 128 6 128Z" fill="#4EA40F"/>
+  <path d="M6 128C6 108 20 92 40 88C42 108 28 124 6 128Z" fill="#3F830D"/>
+  <path d="M154 118C154 96 138 78 116 76C114 100 130 118 154 118Z" fill="#4EA40F"/>
+  <path d="M120 60C104 60 92 72 92 88C110 88 122 76 120 60Z" fill="#297607"/>
+
+  <!-- Question marks -->
+  <text x="24" y="46" font-family="Georgia, serif" font-size="26" font-weight="700" fill="#4EA40F">?</text>
+  <text x="118" y="38" font-family="Georgia, serif" font-size="20" font-weight="700" fill="#4EA40F">?</text>
+
+  <!-- Person body -->
+  <path d="M60 130V104C60 90 69 79 82 79C95 79 104 90 104 104V130H60Z" fill="#212121"/>
+
+  <!-- Person arm raised to chin (thinking pose) -->
+  <path d="M92 86C99 84 105 88 106 95C107 101 103 106 98 107L92 96V86Z" fill="#F2C9A0"/>
+
+  <!-- Neck -->
+  <rect x="76" y="66" width="12" height="16" rx="4" fill="#F2C9A0"/>
+
+  <!-- Head -->
+  <circle cx="82" cy="56" r="17" fill="#F2C9A0"/>
+
+  <!-- Hair -->
+  <path d="M65 54C63 40 72 30 82 30C93 30 101 39 99 52C97 47 92 45 88 47C84 42 76 42 73 48C70 45 66 48 65 54Z" fill="#3A2A20"/>
+  <path d="M65 54C64 62 66 70 71 74C68 66 68 58 71 53C68 52 66 52 65 54Z" fill="#3A2A20"/>
+
+  <!-- Face detail -->
+  <circle cx="77" cy="57" r="1.4" fill="#3A2A20"/>
+  <circle cx="87" cy="57" r="1.4" fill="#3A2A20"/>
+  <path d="M79 63C80.5 64.2 83.5 64.2 85 63" stroke="#B5754B" stroke-width="1.4" stroke-linecap="round"/>
+</svg>
