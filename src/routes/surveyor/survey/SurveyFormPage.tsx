@@ -774,11 +774,15 @@ export default function SurveyFormPage() {
 							setActiveIndex(entry.index);
 							window.scrollTo({ top: 0, behavior: 'smooth' });
 						}}
-						className={`px-5 py-4 rounded-lg transition-all duration-150 text-center leading-tight max-w-[100px] break-words ${
-							activeIndex === entry.index ? 'bg-primary-main text-white shadow-sm' : 'text-neutral-600'
+						className={`px-5 py-4 rounded-lg transition-all duration-150 text-center max-w-[100px] ${
+							activeIndex === entry.index
+								? 'bg-primary-main text-white shadow-sm'
+								: 'text-neutral-600'
 						}`}
 					>
-						{entry.data.gardenName || `Taman ${Number(entry.index) + 1}`}
+						<span className="line-clamp-2 break-words">
+							{entry.data.gardenName || `Taman ${Number(entry.index) + 1}`}
+						</span>
 					</button>
 				))}
 				{canAddGarden && (
@@ -852,7 +856,7 @@ export default function SurveyFormPage() {
 					<div style={{ height: 56 + stickyHeaderHeight }} />
 
 					{/* Hero timer section */}
-					<div className="bg-white px-4 py-5 mb-3 mt-8 shadow-sm flex flex-col items-center text-center gap-1">
+					<div className="bg-white px-4 py-5 mb-3 mt-16 shadow-sm flex flex-col items-center text-center gap-1">
 						<h2 className="text-3xl font-bold text-primary-main tabular-nums">{timerDisplay}</h2>
 						<p className="text-xs text-neutral-400">Hour/ min/sec</p>
 						<p className="text-base font-bold text-primary-main mt-1">{survey.user.name || 'No name'}</p>

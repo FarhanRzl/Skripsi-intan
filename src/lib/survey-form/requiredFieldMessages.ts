@@ -25,14 +25,22 @@ export const REQUIRED_FIELD_MESSAGES: Record<string, string> = {
 	landPreparations: 'Kebutuhan Pengolahan Lahan, Minimal Pilih 1 Kondisi',
 	soilMoistureId: 'Kelembapan Tanah Wajib Diisi',
 
-	// ── Tahap 2 (info tambahan, opsional) ──
+	// ── Tahap 2 (info tambahan) ──
+	// Catatan: gardenFacingDirectionId, specialAreaId, gardenThemeId,
+	// fixedStructures, itemRequests, rainWaterFlowDirectionNote, dan
+	// expectedGardenBuildDate SEKARANG WAJIB (lihat stage2Questions.ts +
+	// DesignSurveyReportStage2GateSchema) — bukan lagi opsional.
 	gardenFacingDirectionId: 'Arah Hadap Taman Wajib Diisi',
 	rainGutterNeedId: 'Kebutuhan Talang Air Wajib Diisi',
+	rainWaterFlowDirectionNote: 'Arah Aliran Air Hujan Wajib Diisi',
 	childrenPresenceId: 'Keberadaan Anak Wajib Diisi',
 	animalPresenceId: 'Keberadaan Hewan Wajib Diisi',
 	careLevelId: 'Tingkat Perawatan Wajib Diisi',
 	specialAreaId: 'Area Khusus Wajib Diisi',
 	gardenThemeId: 'Tema Taman Wajib Diisi',
+	fixedStructures: 'Infrastruktur Rumah yang Tidak Boleh Dipindahkan Wajib Diisi, atau Pilih "Tidak Ada"',
+	itemRequests: 'Permintaan Tanaman Khusus Wajib Diisi',
+	expectedGardenBuildDate: 'Tanggal Ekspektasi Build Wajib Diisi',
 
 	// ── Dokumentasi (wajib di halaman Edit Form Survey / Lengkapi Survey) ──
 	areaPhotoCloudStorageUrl: 'Foto Area wajib diisi (upload file atau isi link Drive).',

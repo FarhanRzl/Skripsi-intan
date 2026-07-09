@@ -41,6 +41,7 @@ export default function FormInfrastructure({
 	formId,
 	surveyData,
 	tags,
+	showValidationWarning,
 	updateSurveyEntries,
 	showDetails = true
 }: FormInfrastructureProps) {
@@ -149,6 +150,10 @@ export default function FormInfrastructure({
 				</div>
 			</div>
 
+			{!entries.length && showValidationWarning && (
+				<Alert icon="error" message="Bagian ini wajib diisi. Silakan lengkapi" />
+			)}
+
 			<Warning
 				message={
 					showDetails
@@ -177,6 +182,9 @@ export default function FormInfrastructure({
 
 							{checked && entry && showDetails && !none && (
 								<>
+									{!entry.distanceFromGardenNote && showValidationWarning && (
+										<Alert icon="error" message="Bagian ini wajib diisi. Silakan lengkapi" />
+									)}
 									<TextInput
 										id={`designSurveyReports.${formId}.fixedStructures.${opt.id}.distanceFromGardenNote`}
 										label="Jarak Infrastruktur di Area Taman (m/cm)"
@@ -189,6 +197,9 @@ export default function FormInfrastructure({
 										}
 									/>
 
+									{!entry.structurePhotos?.length && showValidationWarning && (
+										<Alert icon="error" message="Bagian ini wajib diisi. Silakan lengkapi" />
+									)}
 									<UploadFileField
 										id={`designSurveyReports.${formId}.fixedStructures.${opt.id}.structurePhotos`}
 										files={entry.structurePhotos ?? []}

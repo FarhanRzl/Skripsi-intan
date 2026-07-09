@@ -13,6 +13,7 @@
 // dihapus per-item.
 import { useState, type KeyboardEvent } from 'react';
 import Icon from '$lib/Icon';
+import Alert from '$lib/Alert';
 import { ITEMABLE_TYPE } from '$lib/constants/itemable';
 import type { ItemRequestEntry, Stage1FormProps } from './types';
 
@@ -20,7 +21,12 @@ function generateLocalId() {
 	return `custom-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-export default function PlantRequestForm({ formId, surveyData, updateSurveyEntries }: Stage1FormProps) {
+export default function PlantRequestForm({
+	formId,
+	surveyData,
+	showValidationWarning,
+	updateSurveyEntries
+}: Stage1FormProps) {
 	const itemRequests = surveyData.itemRequests ?? [];
 	const [draft, setDraft] = useState('');
 
@@ -53,8 +59,12 @@ export default function PlantRequestForm({ formId, surveyData, updateSurveyEntri
 	}
 
 	return (
-		<div className="space-y-3">
+		<div className="space-y-3" data-field={`designSurveyReports.${formId}.itemRequests`}>
 			<p className="font-bold text-neutral-main">Permintaan Tanaman Khusus</p>
+
+			{!itemRequests.length && showValidationWarning && (
+				<Alert icon="error" message="Bagian ini wajib diisi. Silakan lengkapi" />
+			)}
 
 			<input
 				type="text"

@@ -44,7 +44,7 @@ export const stage2QuestionCatalog: Stage2QuestionDef[] = [
 		key: 'gardenFacingDirectionId',
 		title: 'Arah Hadap Taman',
 		tagType: TAG_TYPES.GARDEN_FACING_DIRECTION,
-		required: false,
+		required: true,
 		tooltip: 'Gunakan kompas (HP) untuk cek arah hadap taman. Berdiri menghadap area terbuka lalu catat arah utamanya.'
 	},
 	{
@@ -82,7 +82,7 @@ export const stage2QuestionCatalog: Stage2QuestionDef[] = [
 		key: 'specialAreaId',
 		title: 'Area Khusus',
 		tagType: TAG_TYPES.SPECIAL_AREA,
-		required: false,
+		required: true,
 		otherTagId: TAG.SPECIAL_AREA_OTHER,
 		otherTextKey: 'specialAreaOtherText',
 		otherTextLabel: 'Sebutkan Area Khusus Lainnya',
@@ -92,14 +92,14 @@ export const stage2QuestionCatalog: Stage2QuestionDef[] = [
 		key: 'gardenThemeId',
 		title: 'Tema Taman yang Diinginkan',
 		tagType: TAG_TYPES.GARDEN_THEME,
-		required: false,
+		required: true,
 		tooltip: 'Tanyakan gaya/tema taman yang diinginkan pemilik rumah (mis. tropis, minimalis modern, Jepang/Zen).'
 	},
 	{
 		key: 'fixedStructures',
 		title: 'Infrastruktur Rumah yang Tidak Boleh Dipindahkan',
 		tagType: null,
-		required: false,
+		required: true,
 		tooltip: 'Tanyakan infrastruktur rumah yang tidak boleh dipindahkan (mis. kolam, taman, dll).'
 	},
 	{
@@ -109,7 +109,7 @@ export const stage2QuestionCatalog: Stage2QuestionDef[] = [
 		key: 'plantRequests',
 		title: 'Permintaan Tanaman Khusus',
 		tagType: null,
-		required: false,
+		required: true,
 		tooltip: 'Catat permintaan tanaman khusus dari klien (mis. jenis, warna bunga, atau tinggi tertentu).'
 	},
 
@@ -120,7 +120,7 @@ export const stage2QuestionCatalog: Stage2QuestionDef[] = [
 		key: 'rainWaterFlowDirectionNote',
 		title: 'Arah Aliran Air Hujan',
 		tagType: null,
-		required: false,
+		required: true,
 		tooltip: 'Tanyakan arah aliran air hujan di area taman.'
 	},
 		{
@@ -141,7 +141,7 @@ export const stage2QuestionCatalog: Stage2QuestionDef[] = [
 		key: 'expectedGardenBuildDate',
 		title: 'Tanggal Ekspektasi Build',
 		tagType: null,
-		required: false,
+		required: true,
 		tooltip: 'Tanyakan tanggal ekspektasi pembangunan taman.'
 	},
 	{

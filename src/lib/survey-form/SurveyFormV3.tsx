@@ -127,15 +127,6 @@ export default function SurveyFormV3({
 			<hr className="mb-6 border-neutral-border" />
 			<FormSoilCondition {...stage1Props} />
 			<hr className="mb-6 border-neutral-border" />
-			<FormInfrastructure {...stage1Props} />
-			<hr className="mb-6 border-neutral-border" />
-			<DatePickerField
-				id={`designSurveyReports.${formId}.surveyDate`}
-				dataField={`designSurveyReports.${formId}.surveyDate`}
-				label="Tanggal Survey"
-				value={surveyData.surveyDate}
-				onChange={(date) => updateSurveyEntries(formId, { surveyDate: date })}
-			/>
 			{extraFieldKeys
 				.filter((key) => !UPLOAD_FIELD_KEYS.includes(key))
 				.map((key) => {
