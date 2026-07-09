@@ -97,6 +97,7 @@ export interface SurveyFormData {
 	fixedStructures: FixedStructureEntry[];
 
 	// FormAdditionalInfo (Tahap 2 — best-effort, lihat design-survey-report-stage2.ts)
+	areaSunExposureId: string | null;
 	rainGutterNeedId: string | null;
 	childrenPresenceId: string | null;
 	animalPresenceId: string | null;
@@ -123,6 +124,11 @@ export interface SurveyFormData {
 
 	// FormRainGutter
 	rainWaterFlowDirectionNote: string | null;
+
+	// AdditionalInfoQuestion — "Anggaran Pembuatan Taman" (Tahap 2, opsional,
+	// key katalog `gardenBudgetNote`). Catatan ekspektasi budget klien untuk
+	// pembuatan taman, diisi bebas sebagai teks (mis. rentang nominal).
+	gardenBudgetNote: string | null;
 
 	// FormSpecialPresence (catatan teks; TIDAK dipakai oleh AdditionalInfoQuestion generik)
 	childrenPresenceNote: string | null;
@@ -208,6 +214,7 @@ export function createEmptySurveyFormData(): SurveyFormData {
 		soilPlantingReadinessId: null,
 		soilPlantingReadinessNote: null,
 		fixedStructures: [],
+		areaSunExposureId: null,
 		rainGutterNeedId: null,
 		childrenPresenceId: null,
 		animalPresenceId: null,
@@ -219,6 +226,7 @@ export function createEmptySurveyFormData(): SurveyFormData {
 		surveyorNote: null,
 		areaSunExposureNote: null,
 		rainWaterFlowDirectionNote: null,
+		gardenBudgetNote: null,
 		childrenPresenceNote: null,
 		animalPresenceNote: null,
 		areaPhotos: [],

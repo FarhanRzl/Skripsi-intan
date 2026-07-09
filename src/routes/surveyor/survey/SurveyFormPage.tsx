@@ -18,7 +18,7 @@ import Icon from '$lib/Icon';
 import Edit, { type EditValues } from '$lib/modals/Edit';
 import Confirmation from '$lib/modals/Confirmation';
 import { addToast } from '$lib/Toaster';
-import { useSurveyDetail, useSurveyReports, type SurveyReportItem } from '$data/useSurveys';
+import { useSurveyDetail, useSurveyReports } from '$data/useSurveys';
 import {
 	submitDesignSurveyReport,
 	finishSurveyAssignment,
@@ -160,44 +160,18 @@ function makeEntry(index: string): SurveyEntry {
 	};
 }
 
-// BUGFIX: sebelumnya extraFields selalu di-reset ke [] setiap kali entry
-// dipulihkan dari laporan lama (lihat hydrateEntryFromReport di bawah) —
-// akibatnya, pertanyaan Tahap 2 yang sudah ditambahkan inline ke Tahap 1 lewat
-// "Tambah Isian Survey" (dan sudah diisi user) hilang dari tampilan begitu
-// form dibuka lagi (submit -> incomplete -> "Lengkapi Survey"), padahal nilai
-// mentahnya (mis. rainGutterNeedId) sebenarnya masih ada di rawData. Dari sisi
-// user ini terlihat seperti "datanya tidak tersalurkan / hilang".
-//
-// Fix: derive extraFields dari field mana saja di rawData yang SUDAH terisi
-// (bukan selalu []), supaya pertanyaan yang sudah diisi otomatis muncul lagi.
-function deriveExtraFieldsFromData(data: Partial<SurveyFormData>): Stage2FieldKey[] {
-	return stage2QuestionCatalog.filter((q) => Boolean(data[q.key])).map((q) => q.key);
-}
-
-// Padanan hydrateEntryFromReport — merekonstruksi SurveyFormData utuh dari
-// `rawData` yang disimpan submitDesignSurveyReport (JSON.stringify(entry.data)
-// apa adanya), supaya field Tahap 1 yang sudah diisi tetap ada saat form
-// dibuka lagi untuk melengkapi Tahap 2 ("Lengkapi Survey"). Di-spread di atas
-// createEmptySurveyFormData() supaya field yang belum ada di data lama tetap
-// punya default yang aman (array kosong, dst).
-function hydrateEntryFromReport(report: SurveyReportItem, index: string): SurveyEntry {
-	const rawData = (report.rawData ?? {}) as Partial<SurveyFormData>;
-	return {
-		index,
-		data: { ...createEmptySurveyFormData(), ...rawData },
-		stage: 1,
-		showValidationWarning: false,
-		extraFields: deriveExtraFieldsFromData(rawData),
-		reportId: report.id
-	};
-}
+// Catatan: fungsi deriveExtraFieldsFromData & hydrateEntryFromReport
+// `rawData` designSurveyReports) sebelumnya dipakai di sini, tapi alur
+// hydrasinya sudah dinonaktifkan (lihat komentar di dekat `hydratedRef` di
+// bawah) — digantikan hydrasi dari localStorage (getStoredSurveys) berbasis
+// `survey`. Dihapus supaya tidak jadi dead code.
 
 export default function SurveyFormPage() {
 	const { slug } = useParams<{ slug: string }>();
 	const navigate = useNavigate();
 
 	const { data: survey, isPending: isSurveyPending, refetch: refetchSurvey } = useSurveyDetail(slug);
-	const { data: reports, isPending: isReportsPending } = useSurveyReports(slug);
+	const { isPending: isReportsPending } = useSurveyReports(slug);
 	const { data: tags, isPending: isTagsPending } = useTagsQuery([
 		...STAGE1_TAG_TYPES,
 		...STAGE2_TAG_TYPES
@@ -558,24 +532,6 @@ export default function SurveyFormPage() {
 	function firstEmptyFullField(entry: SurveyEntry): string | null {
 		return (
 			firstEmptyStage1Field(entry) ?? firstEmptyStage2Field(entry) ?? firstEmptyDocumentationField(entry)
-		);
-	}
-
-	// Tahap 2 bersifat opsional, tapi kalau user SUDAH mulai isi sebagian
-	// (minimal 1 field Tahap 2 keisi), anggap dia berniat melengkapinya —
-	// dipakai buat nentuin apakah entry ini "belum disentuh sama sekali"
-	// (boleh dilewati begitu saja) atau "sedang dikerjakan tapi belum lengkap".
-	function hasStage2Input(entry: SurveyEntry) {
-		const d = entry.data;
-		return Boolean(
-			d.areaSunExposureId ||
-				d.rainGutterNeedId ||
-				d.childrenPresenceId ||
-				d.animalPresenceId ||
-				d.careLevelId ||
-				d.specialAreaId ||
-				d.gardenThemeId ||
-				d.surveyorNote
 		);
 	}
 
@@ -1047,6 +1003,14 @@ export default function SurveyFormPage() {
 								buttonType="secondary"
 								style="flex-1"
 								action={() => backToStage1(activeEntry.index)}
+							/>
+						)}
+						{activeEntry.stage === 1 && isOngoing && (
+							<Button
+								label="Lanjut ke Tahap 2 (Opsional)"
+								buttonType="secondary"
+								style="flex-1"
+								action={() => goToStage2(activeEntry.index)}
 							/>
 						)}
 					</div>

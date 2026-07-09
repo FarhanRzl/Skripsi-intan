@@ -5,7 +5,6 @@
 // ("Tema Taman yang Diinginkan"). Komponen literal ini disediakan untuk
 // paritas 1:1 dengan Svelte, TIDAK dipasang di FormAdditionalInfo.tsx supaya
 // tidak dobel.
-import Alert from '$lib/Alert';
 import RadioCard from '$lib/components/inputs/RadioCard';
 import InfoTooltip from '$lib/components/tooltips/InfoTooltip';
 import { TAG_TYPES } from '$lib/constants/tag';

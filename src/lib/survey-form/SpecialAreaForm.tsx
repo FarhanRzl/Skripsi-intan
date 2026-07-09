@@ -16,7 +16,6 @@ import type { Stage1FormWithTagsProps } from './types';
 export default function SpecialAreaForm({
 	formId,
 	surveyData,
-	showValidationWarning,
 	tags,
 	updateSurveyEntries
 }: Stage1FormWithTagsProps) {

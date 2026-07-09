@@ -13,7 +13,6 @@ export default function GardenAreaForm({
 	formId,
 	surveyData,
 	sizeCategory,
-	showValidationWarning,
 	updateSurveyEntries,
 	firstGardenData
 }: GardenAreaFormProps) {

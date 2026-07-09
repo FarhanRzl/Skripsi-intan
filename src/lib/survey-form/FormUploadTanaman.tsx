@@ -62,7 +62,14 @@ export default function FormUploadTanaman({
 				updateSurveyEntries(formId, {
 					plantPresences: [
 						...plantPresences,
-						{ itemName: '', photoId: null, plantId: null, volume: 1, denom: 'unit', photo: uploaded }
+						{
+							itemName: '',
+							photoId: null,
+							plantId: null,
+							volume: 1,
+							denom: 'unit',
+							photo: { ...uploaded, name: null }
+						}
 					]
 				});
 			} catch (error) {

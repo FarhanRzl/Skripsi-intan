@@ -8,7 +8,6 @@ import type { Stage1FormProps } from './types';
 export default function GardenNameForm({
 	formId,
 	surveyData,
-	showValidationWarning,
 	updateSurveyEntries,
 	firstGardenData
 }: Stage1FormProps) {
