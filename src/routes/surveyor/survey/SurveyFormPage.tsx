@@ -778,9 +778,7 @@ export default function SurveyFormPage() {
 			) : (
 				<div className="flex items-center justify-between px-4 py-2 border-b border-neutral-100">
 					<div>
-						<p className="text-xs font-semibold text-danger-main">
-							{activeEntry.stage === 1 ? 'Survey Berlangsung' : 'Lengkapi Survey'}
-						</p>
+						<p className="text-xs font-semibold text-danger-main">Survey Berlangsung</p>
 						<p className="text-xs text-neutral-500">
 							{activeProgress} dari {activeTotalSections} Pertanyaan
 						</p>
@@ -977,7 +975,7 @@ export default function SurveyFormPage() {
 				className="bottom-0 z-30 bg-white p-4 border-t border-neutral-8 rounded-t-2xl shadow-[0_-4px_12px_rgba(0,0,0,0.06)] space-y-3"
 				style={{ width: width || undefined }}
 			>
-				{activeEntry.stage === 1 && isOngoing && (
+				{isOngoing && (
 					<button
 						type="button"
 						onClick={() => setIsAddQuestionModalOpen(true)}

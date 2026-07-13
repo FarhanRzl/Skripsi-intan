@@ -13,7 +13,7 @@ import UploadedDocument from '$lib/components/inputs/UploadedDocument';
 import type { Tag } from '$types/tags';
 import type { NameableFile } from '$types/files';
 import type { SurveyFormData } from './types';
-import { stage2QuestionCatalog } from './stage2Questions';
+import { stage2QuestionCatalog, type Stage2FieldKey, type Stage2QuestionDef } from './stage2Questions';
 import { getTagTitle } from './fieldSuggestionUtils';
 import ValidationToggle from './ValidationToggle';
 
@@ -26,13 +26,23 @@ interface SurveyReportSummaryProps {
 // fixedStructures sudah tampil di section "Infrastruktur" (sama seperti
 // FormInfrastructure Tahap 1), 4 sisanya adalah section "Dokumentasi" yang
 // dirender terpisah lewat FileGroup (sama seperti SurveyFormV3).
-const STAGE2_KEYS_RENDERED_ELSEWHERE = new Set([
+const STAGE2_KEYS_RENDERED_ELSEWHERE = new Set<Stage2FieldKey>([
 	'fixedStructures',
 	'PhotoAreaId',
 	'existingPlantPhoto',
 	'sketchPhoto',
 	'otherDocumentation'
 ]);
+
+// Key sisa (di luar STAGE2_KEYS_RENDERED_ELSEWHERE & yang ditangani lewat
+// if-return generik di bawah) semuanya adalah field *Id bertipe tag di
+// SurveyFormData — type predicate ini supaya TypeScript ikut menyempitkan
+// `def.key` (Set.has() saja tidak menyempitkan tipe).
+function isGenericTagKey(
+	def: Stage2QuestionDef
+): def is Stage2QuestionDef & { key: Exclude<Stage2FieldKey, 'fixedStructures' | 'PhotoAreaId' | 'existingPlantPhoto' | 'sketchPhoto' | 'otherDocumentation'> } {
+	return !STAGE2_KEYS_RENDERED_ELSEWHERE.has(def.key);
+}
 
 function SummaryRow({ label, value, note }: { label: string; value: ReactNode; note?: string | null }) {
 	const isEmpty = value === null || value === undefined || value === '';
@@ -241,7 +251,7 @@ export default function SurveyReportSummary({ data, tags }: SurveyReportSummaryP
 			</SummarySection>
 
 			{stage2QuestionCatalog
-				.filter((def) => !STAGE2_KEYS_RENDERED_ELSEWHERE.has(def.key))
+				.filter(isGenericTagKey)
 				.map((def) => {
 					if (def.key === 'plantRequests') {
 						return (
