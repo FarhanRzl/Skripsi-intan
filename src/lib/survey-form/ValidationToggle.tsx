@@ -8,18 +8,24 @@ interface ValidationToggleProps {
 	formId: string;
 	sectionKey: string;
 	surveyData: SurveyFormData;
-	updateSurveyEntries: (formId: string, patch: Partial<SurveyFormData>) => void;
+	updateSurveyEntries?: (formId: string, patch: Partial<SurveyFormData>) => void;
+	// Dipakai di halaman "Survey Selesai" (SurveyReportSummary.tsx) — laporan
+	// yang sudah disubmit tidak punya jalur update kembali ke backend, jadi
+	// toggle-nya cukup menampilkan status terakhir, tidak bisa diklik.
+	readOnly?: boolean;
 }
 
 export default function ValidationToggle({
 	formId,
 	sectionKey,
 	surveyData,
-	updateSurveyEntries
+	updateSurveyEntries,
+	readOnly = false
 }: ValidationToggleProps) {
 	const checked = surveyData.sectionValidations?.[sectionKey] ?? false;
 
 	const handleToggle = () => {
+		if (readOnly || !updateSurveyEntries) return;
 		updateSurveyEntries(formId, {
 			sectionValidations: {
 				...surveyData.sectionValidations,
@@ -34,9 +40,10 @@ export default function ValidationToggle({
 			<button
 				type="button"
 				onClick={handleToggle}
+				disabled={readOnly}
 				className={`relative w-10 rounded-full transition-colors ${
 					checked ? 'bg-primary-main' : 'bg-gray-300'
-				}`}
+				} ${readOnly ? 'cursor-default' : ''}`}
 				style={{ height: '20px' }}
 				aria-pressed={checked}
 			>

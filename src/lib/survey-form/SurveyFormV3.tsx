@@ -1,6 +1,5 @@
 // Komponen orkestrator untuk 1 entri "taman" di form survey. Menyusun 10
-// komponen Tahap 1 (GardenNameForm ... FormInfrastructure) atau komponen
-// Tahap 2 (FormAdditionalInfo), tergantung `stage` yang sedang aktif.
+// komponen Tahap 1 (GardenNameForm ... FormInfrastructure).
 // Dipanggil dari SurveyFormPage.tsx.
 //
 // Fitur "Tambah Isian Survey": di akhir Tahap 1, ada tombol yang membuka
@@ -33,7 +32,6 @@ import FormAccess from './Formaccess';
 import FormAreaCondition from './Formareacondition';
 import FormLandPreparation from './Formlandpreparation';
 import FormSoilCondition from './Formsoilcondition';
-import FormAdditionalInfo from './Formadditionalinfo';
 import AdditionalInfoQuestion from './AdditionalInfoQuestion';
 import { getStage2QuestionDef, type Stage2FieldKey } from './stage2Questions';
 import type { SurveyFormData } from './types';
@@ -48,7 +46,6 @@ interface SurveyFormV2Props {
 	showValidationWarning: boolean;
 	tags: Tag[];
 	updateSurveyEntries: (formId: string, patch: Partial<SurveyFormData>) => void;
-	stage: 1 | 2;
 	extraFieldKeys: Stage2FieldKey[];
 	firstGardenData?: SurveyFormData | null;
 }
@@ -76,7 +73,6 @@ export default function SurveyFormV3({
 	showValidationWarning,
 	tags,
 	updateSurveyEntries,
-	stage,
 	extraFieldKeys,
 	firstGardenData
 }: SurveyFormV2Props) {
@@ -88,10 +84,6 @@ export default function SurveyFormV3({
 		updateSurveyEntries,
 		firstGardenData
 	};
-
-	if (stage === 2) {
-		return <FormAdditionalInfo {...stage1Props} />;
-	}
 
 	return (
 		<div className="space-y-6">

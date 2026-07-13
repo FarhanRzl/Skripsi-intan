@@ -22,6 +22,11 @@ import { addToast } from '$lib/Toaster';
 import { formatDisplay, getWaMeUrl } from '$lib/utils/phone';
 import { useSurveyDetail, useSurveyReports } from '$data/useSurveys';
 import { checkInSurvey, updateOrderDesign } from '$data/surveyActions';
+import { useTagsQuery } from '$lib/stores/tags';
+import { STAGE1_TAG_TYPES, STAGE2_TAG_TYPES } from '$lib/survey-form/tagTypes';
+import { createEmptySurveyFormData } from '$lib/survey-form/types';
+import SurveyReportSummary, { FileGroup } from '$lib/survey-form/SurveyReportSummary';
+import SurveyResultCard from '$lib/survey-form/SurveyResultCard';
 
 const sizeCategories = ['<= 10', '11-20', '21-30', '31-40', '41-50', '>= 51'];
 
@@ -35,6 +40,7 @@ export default function SurveyDetailPage() {
 
 	const { data: survey, isPending, error, refetch } = useSurveyDetail(slug);
 	const { data: reports } = useSurveyReports(slug);
+	const { data: tags } = useTagsQuery([...STAGE1_TAG_TYPES, ...STAGE2_TAG_TYPES]);
 
 	const [currentTab, setCurrentTab] = useState<DetailTab>('Detail Order');
 	const [editModal, setEditModal] = useState<{ visible: boolean; title: string }>({
@@ -145,6 +151,10 @@ export default function SurveyDetailPage() {
 	}
 
 	const canEdit = survey.status === 'in_review';
+	// "Survey Selesai" / "Sedang Ditinjau" — Ukuran & Foto Area di tab Detail
+	// Order beralih dari data order (estimasi sebelum survey) ke data REAL
+	// per taman yang surveyor kumpulkan di lapangan (designSurveyReports).
+	const isSurveyDone = survey.status === 'in_review' || survey.status === 'finish';
 
 	return (
 		<main ref={containerRef} className="relative pb-24">
@@ -179,14 +189,28 @@ export default function SurveyDetailPage() {
 			)}
 
 			{(survey.status === 'in_review' || survey.status === 'finish') && (
-				<div className="relative flex flex-col items-center mx-4 mt-20 bg-neutral-8 rounded-xl p-4 space-y-1">
-					<p className="text-sm font-semibold text-primary-main">
-						{survey.status === 'in_review' ? 'Sedang Ditinjau' : 'Survey Selesai'}
-					</p>
-					<p className="text-xs text-neutral-5 text-center">
-						Preview laporan survey lengkap akan tersedia di fase berikutnya. Sementara, ringkasan
-						laporan bisa dilihat di tab "Form Survey".
-					</p>
+				<div className="mx-4 mt-20 space-y-3">
+					{reports.length > 0 ? (
+						reports.map((entry) => {
+							const reportData = { ...createEmptySurveyFormData(), ...(entry.rawData ?? {}) };
+							return (
+								<SurveyResultCard
+									key={entry.id}
+									gardenName={entry.gardenName}
+									clientName={survey.user.name}
+									checkInAt={survey.checkInAt}
+									address={survey.address}
+									expectedGardenBuildDate={reportData.expectedGardenBuildDate}
+								/>
+							);
+						})
+					) : (
+						<div className="flex flex-col items-center bg-neutral-8 rounded-xl p-4">
+							<p className="text-sm font-semibold text-primary-main">
+								{survey.status === 'in_review' ? 'Sedang Ditinjau' : 'Survey Selesai'}
+							</p>
+						</div>
+					)}
 				</div>
 			)}
 
@@ -273,22 +297,35 @@ export default function SurveyDetailPage() {
 					<div className="space-y-2 text-xs">
 						<div className="flex justify-between items-center">
 							<h2 className="text-lg text-primary-main font-bold">Ukuran</h2>
-							{canEdit && (
+							{canEdit && !isSurveyDone && (
 								<button onClick={() => setEditModal({ visible: true, title: 'Edit Ukuran' })}>
 									<Icon name="edit" fill={1} size="1.25rem" />
 								</button>
 							)}
 						</div>
-						<div className="flex justify-between items-center">
-							<p className="text-sm">Kategori Ukuran</p>
-							<p>
-								{sizeCategories[(survey.categorySizeId ?? 0) - 1] || '-'} m<sup>2</sup>
-							</p>
-						</div>
-						<div className="flex justify-between items-center">
-							<p className="text-sm">Ukuran</p>
-							<p>{survey.areaSize ? `${survey.areaSize} m²` : '-'}</p>
-						</div>
+						{isSurveyDone && reports.length > 0 ? (
+							<div className="space-y-3">
+								{reports.map((entry) => (
+									<div key={entry.id} className="flex justify-between items-center">
+										<p className="text-sm">{entry.gardenName || 'Masukkan Nama Taman'}</p>
+										<p>{entry.areaSize ? `${entry.areaSize} m²` : '-'}</p>
+									</div>
+								))}
+							</div>
+						) : (
+							<>
+								<div className="flex justify-between items-center">
+									<p className="text-sm">Kategori Ukuran</p>
+									<p>
+										{sizeCategories[(survey.categorySizeId ?? 0) - 1] || '-'} m<sup>2</sup>
+									</p>
+								</div>
+								<div className="flex justify-between items-center">
+									<p className="text-sm">Ukuran</p>
+									<p>{survey.areaSize ? `${survey.areaSize} m²` : '-'}</p>
+								</div>
+							</>
+						)}
 					</div>
 					<hr />
 					<div className="space-y-2">
@@ -322,7 +359,26 @@ export default function SurveyDetailPage() {
 						<div className="flex justify-between items-center mb-2">
 							<h2 className="text-lg text-primary-main font-bold">Foto Area</h2>
 						</div>
-						{survey.areaPhotos.length > 0 ? (
+						{isSurveyDone && reports.length > 0 ? (
+							<div className="space-y-4">
+								{reports.map((entry) => {
+									const reportData = { ...createEmptySurveyFormData(), ...(entry.rawData ?? {}) };
+									return (
+										<div key={entry.id} className="space-y-2">
+											<p className="text-sm font-semibold">
+												{entry.gardenName || 'Masukkan Nama Taman'}
+											</p>
+											<FileGroup
+												images={reportData.areaPhotoImages}
+												videos={reportData.areaPhotoVideos}
+												documents={reportData.areaPhotoDocuments}
+												cloudUrl={reportData.areaPhotoCloudStorageUrl}
+											/>
+										</div>
+									);
+								})}
+							</div>
+						) : survey.areaPhotos.length > 0 ? (
 							<div className="space-y-3 text-sm">
 								{survey.areaPhotos.map((photo, i) => (
 									<img key={i} src={photo || ''} alt={`foto area ${i}`} className="rounded-lg" />
@@ -362,16 +418,22 @@ export default function SurveyDetailPage() {
 							{reports.map((entry) => (
 								<div key={entry.id} className="bg-white rounded-xl mx-4 shadow-card">
 									<CollapsibleSummary label={entry.gardenName || 'Masukkan Nama Taman'} icon="yard">
-										<div className="px-4 pb-4 space-y-2">
-											<p className="text-sm text-neutral-6">
-												{entry.surveyorNote || 'Belum ada catatan surveyor.'}
-											</p>
-											<p className="text-xs text-neutral-5">
-												Ukuran: {entry.areaSize ? `${entry.areaSize} m²` : '-'}
-											</p>
-											<p className="text-xs text-neutral-5">
-												Form survey lengkap akan tersedia di fase berikutnya.
-											</p>
+										<div className="px-4 pb-4">
+											{entry.rawData ? (
+												<SurveyReportSummary
+													data={{ ...createEmptySurveyFormData(), ...entry.rawData }}
+													tags={tags}
+												/>
+											) : (
+												<div className="space-y-2">
+													<p className="text-sm text-neutral-6">
+														{entry.surveyorNote || 'Belum ada catatan surveyor.'}
+													</p>
+													<p className="text-xs text-neutral-5">
+														Ukuran: {entry.areaSize ? `${entry.areaSize} m²` : '-'}
+													</p>
+												</div>
+											)}
 										</div>
 									</CollapsibleSummary>
 								</div>

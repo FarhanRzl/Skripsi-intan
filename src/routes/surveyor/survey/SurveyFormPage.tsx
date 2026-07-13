@@ -26,7 +26,6 @@ import {
 	updateOrderDesign
 } from '$data/surveyActions';
 import { useTagsQuery } from '$lib/stores/tags';
-import { TAG_TYPES } from '$lib/constants/tag';
 import SurveyFormV2 from '$lib/survey-form/SurveyFormV2';
 import SurveyFormV3 from '$lib/survey-form/SurveyFormV3';
 import AddSurveyQuestionModal from '$lib/survey-form/AddSurveyQuestionModal';
@@ -36,35 +35,11 @@ import { DesignSurveyReportStage1GateSchema } from '$types/design-survey-report-
 import { DesignSurveyReportStage2GateSchema } from '$types/design-survey-report-stage2';
 import { stage2QuestionCatalog, type Stage2FieldKey } from '$lib/survey-form/stage2Questions';
 import { requiredMessage, DEFAULT_REQUIRED_MESSAGE } from '$lib/survey-form/requiredFieldMessages';
+import { STAGE1_TAG_TYPES, STAGE2_TAG_TYPES } from '$lib/survey-form/tagTypes';
 import { getStoredSurveys, saveStoredSurveys } from '../../../utils/storageHelper';
 import SubmitConfirmModal from '$lib/modals/SubmitConfirmModal';
 import SurveySavedScreen from './SurveySavedScreen';
 const sizeCategories = ['<= 10', '11-20', '21-30', '31-40', '41-50', '>= 51'];
-
-const STAGE1_TAG_TYPES: string[] = [
-	TAG_TYPES.SUN_EXPOSURE_OBSTRUCTION,
-	TAG_TYPES.DRAINAGE,
-	TAG_TYPES.WATER_SOURCE,
-	TAG_TYPES.ELECTRICITY_SOURCE,
-	TAG_TYPES.ENTRANCE_ACCESS,
-	TAG_TYPES.GARDEN_ENTRANCE_ACCESS,
-	TAG_TYPES.GROUND_SURFACE_CONDITION,
-	TAG_TYPES.LAND_PREPARATION,
-	TAG_TYPES.SOIL_MOISTURE,
-	TAG_TYPES.SOIL_PLANTING_READINESS,
-];
-
-const STAGE2_TAG_TYPES: string[] = [
-	TAG_TYPES.GARDEN_FACING_DIRECTION,
-	TAG_TYPES.AREA_SUN_EXPOSURE,
-	TAG_TYPES.RAIN_GUTTER_NEED,
-	TAG_TYPES.CHILDREN_PRESENCE,
-	TAG_TYPES.ANIMAL_PRESENCE,
-	TAG_TYPES.CARE_LEVEL,
-	TAG_TYPES.SPECIAL_AREA,
-	TAG_TYPES.GARDEN_THEME,
-	TAG_TYPES.FIXED_STRUCTURE
-];
 
 // Padanan calcProgressStage1/calcProgressStage2 di [slug]/form/+page.svelte —
 // 11 section Tahap 1, 6 section Tahap 2. (2 field "note" yang dipakai di
@@ -137,7 +112,6 @@ const formatTimerDigit = (digit: number) => (digit < 10 ? `0${digit}` : digit.to
 interface SurveyEntry {
 	index: string;
 	data: SurveyFormData;
-	stage: 1 | 2;
 	showValidationWarning: boolean;
 	// Pertanyaan Tahap 2 yang sudah ditambahkan inline ke Tahap 1 lewat
 	// tombol "Tambah Isian Survey" (lihat SurveyFormV2.tsx).
@@ -153,7 +127,6 @@ function makeEntry(index: string): SurveyEntry {
 	return {
 		index,
 		data: createEmptySurveyFormData(),
-		stage: 1,
 		showValidationWarning: false,
 		extraFields: [],
 		reportId: null
@@ -537,10 +510,6 @@ export default function SurveyFormPage() {
 
 
 
-	function backToStage1(index: string) {
-		setEntries((prev) => prev.map((e) => (e.index === index ? { ...e, stage: 1 } : e)));
-	}
-
 	// Tombol kirim aktif begitu Tahap 1 valid di SEMUA taman — Tahap 2 tidak
 	// lagi jadi syarat.
 	const canSubmit = entries.length > 0 && entries.every((e) => isStage1Valid(e));
@@ -570,7 +539,7 @@ export default function SurveyFormPage() {
 			if (invalidEntry) {
 				setEntries((prev) =>
 					prev.map((e) =>
-						e.index === invalidEntry.index ? { ...e, showValidationWarning: true, stage: 1 } : e
+						e.index === invalidEntry.index ? { ...e, showValidationWarning: true } : e
 					)
 				);
 				setActiveIndex(invalidEntry.index);
@@ -719,30 +688,20 @@ export default function SurveyFormPage() {
 
 	const isOngoing = survey.status === 'ongoing';
 
-	// Di "Mulai Survey" (isOngoing, SurveyFormV2), Tahap 1 & Tahap 2 dipisah
-	// lewat entry.stage (1 -> 2 via goToStage2), jadi progress bar cukup
-	// dihitung per-stage aktif saja.
+	// Di "Mulai Survey" (isOngoing, SurveyFormV2), hanya Tahap 1 yang wajib,
+	// jadi progress bar dihitung dari Tahap 1 saja.
 	//
 	// Di "Edit Form Survey" / "Lengkapi Survey" (!isOngoing, SurveyFormV3),
 	// Tahap 1 + Tahap 2 + Dokumentasi tampil FLAT sekaligus di satu halaman
-	// (lihat activeExtraFieldKeys di bawah) dan entry.stage TIDAK PERNAH
-	// pindah ke 2 di flow ini — kalau progress bar tetap dihitung dari
-	// activeEntry.stage seperti di flow isOngoing, dia akan mentok di 11
-	// (TOTAL_SECTIONS_STAGE1) walau user sudah mengisi field Tahap 2 &
-	// Dokumentasi yang sebenarnya tampil di layar yang sama. Jadi di sini
-	// totalnya digabung ketiganya, bukan cuma Tahap 1.
+	// (lihat activeExtraFieldKeys di bawah), jadi totalnya digabung ketiganya.
 	const activeTotalSections = !isOngoing
 		? TOTAL_SECTIONS_STAGE1 + TOTAL_SECTIONS_STAGE2 + TOTAL_SECTIONS_DOCUMENTATION
-		: activeEntry.stage === 1
-			? TOTAL_SECTIONS_STAGE1
-			: TOTAL_SECTIONS_STAGE2;
+		: TOTAL_SECTIONS_STAGE1;
 	const activeProgress = !isOngoing
 		? calcProgressStage1(activeEntry.data) +
 			calcProgressStage2(activeEntry.data) +
 			calcProgressDocumentation(activeEntry.data)
-		: activeEntry.stage === 1
-			? calcProgressStage1(activeEntry.data)
-			: calcProgressStage2(activeEntry.data);
+		: calcProgressStage1(activeEntry.data);
 
 	// Survey `incomplete` berarti taman-tamannya sudah ditentukan & Tahap 1
 	// sudah pernah disubmit sebelumnya — jadi di sesi "Lengkapi Survey" ini
@@ -799,7 +758,7 @@ export default function SurveyFormPage() {
 
 	// Baris progress bar + info stage — dipakai baik di layout sticky
 	// (isOngoing) maupun layout normal-flow (!isOngoing).
-	const isStage2OrLengkapi = activeEntry.stage === 2 || !isOngoing;
+	const isStage2OrLengkapi = !isOngoing;
 
 	const stageProgressInfo = (
 		<>
@@ -961,7 +920,6 @@ export default function SurveyFormPage() {
 							showValidationWarning={activeEntry.showValidationWarning}
 							tags={tags}
 							updateSurveyEntries={updateSurveyEntries}
-							stage={activeEntry.stage}
 							extraFieldKeys={activeExtraFieldKeys}
 							firstGardenData={firstGardenDataForSuggestion}
 						/>
@@ -973,22 +931,10 @@ export default function SurveyFormPage() {
 							showValidationWarning={activeEntry.showValidationWarning}
 							tags={tags}
 							updateSurveyEntries={updateSurveyEntries}
-							stage={activeEntry.stage}
 							extraFieldKeys={activeExtraFieldKeys}
 							firstGardenData={firstGardenDataForSuggestion}
 						/>
 					)}
-
-					<div className="flex gap-3 mt-6">
-						{activeEntry.stage === 2 && (
-							<Button
-								label="Kembali ke Tahap 1"
-								buttonType="secondary"
-								style="flex-1"
-								action={() => backToStage1(activeEntry.index)}
-							/>
-						)}
-					</div>
 				</div>
 			)}
 
