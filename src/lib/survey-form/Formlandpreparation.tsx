@@ -3,9 +3,10 @@ import CheckboxCard from '$lib/components/inputs/CheckboxCard';
 import InfoTooltip from '$lib/components/tooltips/InfoTooltip';
 import InsightBox from './InsightBox';
 import FieldSuggestion from './FieldSuggestion';
+import TextInput from '$lib/input-fields/TextInput';
 import { shouldSuggestField, getSuggestionGardenName, getTagTitles } from './fieldSuggestionUtils';
 import { TAG_TYPES } from '$lib/constants/tag';
-import type { Stage1FormWithTagsProps } from './types';
+import type { LandPreparationEntry, Stage1FormWithTagsProps } from './types';
 import ValidationToggle from './ValidationToggle';
 
 export default function FormLandPreparation({
@@ -45,6 +46,16 @@ export default function FormLandPreparation({
 		updateSurveyEntries(formId, { landPreparations });
 	}
 
+	// Catatan detail per opsi yang dipilih (mis. lokasi puing, seberapa parah
+	// gulmanya) — termasuk utk opsi "Tidak Diketahui", supaya surveyor tetap
+	// bisa mencatat kenapa kondisinya belum diketahui.
+	function patchLandNote(id: string, surveyorNote: string) {
+		const landPreparations = (surveyData.landPreparations ?? []).map((lp) =>
+			lp.landPreparationId === id ? { ...lp, surveyorNote: surveyorNote === '' ? null : surveyorNote } : lp
+		);
+		updateSurveyEntries(formId, { landPreparations });
+	}
+
 	const landInsight = (() => {
 		const selected = surveyData.landPreparations ?? [];
 		if (!selected.length) return null;
@@ -74,18 +85,34 @@ export default function FormLandPreparation({
 			)}
 
 			<div className="space-y-2">
-				{landPreparationOpts.map((opt) => (
-					<CheckboxCard
-						key={opt.id}
-						id={`designSurveyReports.${formId}.landPreparations.${opt.id}`}
-						name={`designSurveyReports.${formId}.landPreparations`}
-						value={opt.id}
-						selectedValues={selectedIds}
-						onclick={() => toggleLand(opt.id)}
-						title={opt.title}
-						description=""
-					/>
-				))}
+				{landPreparationOpts.map((opt) => {
+					const entry: LandPreparationEntry | undefined = (surveyData.landPreparations ?? []).find(
+						(lp) => lp.landPreparationId === opt.id
+					);
+					return (
+						<div key={opt.id} className="space-y-2">
+							<CheckboxCard
+								id={`designSurveyReports.${formId}.landPreparations.${opt.id}`}
+								name={`designSurveyReports.${formId}.landPreparations`}
+								value={opt.id}
+								selectedValues={selectedIds}
+								onclick={() => toggleLand(opt.id)}
+								title={opt.title}
+								description=""
+							/>
+							{entry && (
+								<TextInput
+									id={`designSurveyReports.${formId}.landPreparations.${opt.id}.surveyorNote`}
+									label={`Catatan Detail — ${opt.title}`}
+									type="textarea"
+									bg="white"
+									value={entry.surveyorNote ?? ''}
+									onInput={(e) => patchLandNote(opt.id, e.target.value)}
+								/>
+							)}
+						</div>
+					);
+				})}
 			</div>
 
 			{landInsight && <InsightBox text={landInsight} />}

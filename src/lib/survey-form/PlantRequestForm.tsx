@@ -15,6 +15,7 @@ import { useState, type KeyboardEvent } from 'react';
 import Icon from '$lib/Icon';
 import Alert from '$lib/Alert';
 import { ITEMABLE_TYPE } from '$lib/constants/itemable';
+import { DUMMY_PLANT_NAMES } from './plantOptions';
 import type { ItemRequestEntry, Stage1FormProps } from './types';
 
 function generateLocalId() {
@@ -29,14 +30,18 @@ export default function PlantRequestForm({
 }: Stage1FormProps) {
 	const itemRequests = surveyData.itemRequests ?? [];
 	const [draft, setDraft] = useState('');
+	// Dropdown saran dari DUMMY_PLANT_NAMES — tetap tag-input teks bebas
+	// sesuai desain (lihat catatan di atas), cuma ditambah saran supaya
+	// surveyor bisa pilih dari daftar tanpa ngetik penuh.
+	const [showSuggestions, setShowSuggestions] = useState(false);
 
-	function addPlant() {
-		const name = draft.trim();
-		if (!name) return;
+	function addPlantName(name: string) {
+		const trimmed = name.trim();
+		if (!trimmed) return;
 
 		const newEntry: ItemRequestEntry = {
 			itemableId: generateLocalId(),
-			itemableName: name,
+			itemableName: trimmed,
 			itemableType: ITEMABLE_TYPE.PLANT,
 			notExistsNote: null
 		};
@@ -44,6 +49,17 @@ export default function PlantRequestForm({
 		updateSurveyEntries(formId, { itemRequests: [...itemRequests, newEntry] });
 		setDraft('');
 	}
+
+	function addPlant() {
+		addPlantName(draft);
+	}
+
+	const existingNames = new Set(itemRequests.map((item) => (item.itemableName ?? '').toLowerCase()));
+	const suggestions = DUMMY_PLANT_NAMES.filter(
+		(name) =>
+			!existingNames.has(name.toLowerCase()) &&
+			(draft.trim() === '' || name.toLowerCase().includes(draft.trim().toLowerCase()))
+	);
 
 	function handleRemove(itemableId: string | null) {
 		updateSurveyEntries(formId, {
@@ -66,15 +82,41 @@ export default function PlantRequestForm({
 				<Alert icon="error" message="Bagian ini wajib diisi. Silakan lengkapi" />
 			)}
 
-			<input
-				type="text"
-				value={draft}
-				onChange={(e) => setDraft(e.target.value)}
-				onKeyDown={handleKeyDown}
-				onBlur={addPlant}
-				placeholder="Nama Tanaman"
-				className="w-full rounded-xl border border-neutral-border bg-white px-3.5 py-2.5 text-sm text-neutral-main placeholder-neutral-6 outline-none focus:border-primary-main"
-			/>
+			<div className="relative">
+				<input
+					type="text"
+					value={draft}
+					onChange={(e) => setDraft(e.target.value)}
+					onKeyDown={handleKeyDown}
+					onFocus={() => setShowSuggestions(true)}
+					onBlur={() => {
+						addPlant();
+						// delay supaya klik saran (onMouseDown) sempat kedaftar dulu
+						// sebelum dropdown-nya ditutup
+						setTimeout(() => setShowSuggestions(false), 100);
+					}}
+					placeholder="Nama Tanaman"
+					className="w-full rounded-xl border border-neutral-border bg-white px-3.5 py-2.5 text-sm text-neutral-main placeholder-neutral-6 outline-none focus:border-primary-main"
+				/>
+
+				{showSuggestions && suggestions.length > 0 && (
+					<div className="absolute z-10 mt-1 w-full rounded-xl border border-neutral-border bg-white shadow-card overflow-hidden">
+						{suggestions.map((name) => (
+							<button
+								key={name}
+								type="button"
+								onMouseDown={(e) => {
+									e.preventDefault();
+									addPlantName(name);
+								}}
+								className="w-full text-left px-3.5 py-2 text-sm text-neutral-main hover:bg-primary-surface"
+							>
+								{name}
+							</button>
+						))}
+					</div>
+				)}
+			</div>
 
 			{itemRequests.length > 0 && (
 				<div className="flex flex-wrap gap-2">

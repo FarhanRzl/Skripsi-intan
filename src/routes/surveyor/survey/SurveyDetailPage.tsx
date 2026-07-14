@@ -418,7 +418,22 @@ export default function SurveyDetailPage() {
 							{reports.map((entry) => (
 								<div key={entry.id} className="bg-white rounded-xl mx-4 shadow-card">
 									<CollapsibleSummary label={entry.gardenName || 'Masukkan Nama Taman'} icon="yard">
-										<div className="px-4 pb-4">
+										<div className="px-4 pb-4 space-y-4">
+											<div className="flex justify-end">
+												<button
+													type="button"
+													onClick={() =>
+														navigate(
+															`/surveyor/survey/${survey.id}/form?entryIndex=${entry.clientEntryIndex ?? ''}`
+														)
+													}
+													className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 border-primary-main text-primary-main text-xs font-semibold bg-white"
+												>
+													<Icon name="edit" fill={1} size="0.9rem" />
+													Edit Taman Ini
+												</button>
+											</div>
+
 											{entry.rawData ? (
 												<SurveyReportSummary
 													data={{ ...createEmptySurveyFormData(), ...entry.rawData }}

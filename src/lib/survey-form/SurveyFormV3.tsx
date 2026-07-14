@@ -108,7 +108,7 @@ export default function SurveyFormV3({
 			<hr className="mb-6 border-neutral-border" />
 			<FormWaterElectricity {...stage1Props} />
 			<hr className="mb-6 border-neutral-border" />
-			<FormAccess {...stage1Props} />
+			<FormAccess {...stage1Props} photosRequired />
 			<hr className="mb-6 border-neutral-border" />
 			<FormAreaCondition {...stage1Props} />
 			<hr className="mb-6 border-neutral-border" />

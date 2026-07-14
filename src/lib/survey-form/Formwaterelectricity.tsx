@@ -4,9 +4,18 @@ import InfoTooltip from '$lib/components/tooltips/InfoTooltip';
 import InsightBox from './InsightBox';
 import FieldSuggestion from './FieldSuggestion';
 import { shouldSuggestField, getSuggestionGardenName, getTagTitle } from './fieldSuggestionUtils';
-import { TAG_TYPES } from '$lib/constants/tag';
+import TextInput from '$lib/input-fields/TextInput';
+import { TAG, TAG_TYPES } from '$lib/constants/tag';
 import type { Stage1FormWithTagsProps } from './types';
 import ValidationToggle from './ValidationToggle';
+
+// "Tidak Tersedia" (water_source tidak punya id tetap seperti
+// TAG.ELECTRICITY_SOURCE_NONE, jadi dicocokkan lewat judul juga) — kalau
+// sumbernya memang tidak ada, catatan jarak/ukuran tidak relevan buat
+// ditampilkan.
+function isSourceUnavailable(tagId: string, title: string): boolean {
+	return tagId === TAG.ELECTRICITY_SOURCE_NONE || title.trim().toLowerCase() === 'tidak tersedia';
+}
 
 export default function FormWaterElectricity({
 	formId,
@@ -17,6 +26,14 @@ export default function FormWaterElectricity({
 }: Stage1FormWithTagsProps) {
 	const waterSourceOpts = tags.filter((tag) => tag.type === TAG_TYPES.WATER_SOURCE);
 	const electricitySourceOpts = tags.filter((tag) => tag.type === TAG_TYPES.ELECTRICITY_SOURCE);
+
+	const selectedWaterTag = waterSourceOpts.find((t) => t.id === surveyData.waterSourceId);
+	const showWaterDistanceNote = !!selectedWaterTag && !isSourceUnavailable(selectedWaterTag.id, selectedWaterTag.title);
+
+	const selectedElectricityTag = electricitySourceOpts.find((t) => t.id === surveyData.electricitySourceId);
+	const showElectricityDistanceNote =
+		!!selectedElectricityTag && !isSourceUnavailable(selectedElectricityTag.id, selectedElectricityTag.title);
+
 	const showWaterSuggestion =
 		!!firstGardenData && shouldSuggestField(surveyData.waterSourceId, firstGardenData.waterSourceId);
 	const showElectricitySuggestion =
@@ -77,6 +94,20 @@ export default function FormWaterElectricity({
 					))}
 				</div>
 
+				{showWaterDistanceNote && (
+					<TextInput
+						id={`designSurveyReports.${formId}.waterSourceDistanceNote`}
+						label="Catatan Jarak/Ukuran Sumber Air"
+						bg="white"
+						value={surveyData.waterSourceDistanceNote ?? ''}
+						onInput={(e) =>
+							updateSurveyEntries(formId, {
+								waterSourceDistanceNote: e.target.value === '' ? null : e.target.value
+							})
+						}
+					/>
+				)}
+
 				{waterInsight && <InsightBox text={waterInsight} />}
 						<ValidationToggle key={formId} formId={formId} sectionKey='waterSourceId' surveyData={surveyData} updateSurveyEntries={(formId, updates) => updateSurveyEntries(formId, updates)}/>
 			</div>
@@ -122,6 +153,20 @@ export default function FormWaterElectricity({
 						/>
 					))}
 				</div>
+
+				{showElectricityDistanceNote && (
+					<TextInput
+						id={`designSurveyReports.${formId}.electricitySourceDistanceNote`}
+						label="Catatan Jarak/Ukuran Sumber Listrik"
+						bg="white"
+						value={surveyData.electricitySourceDistanceNote ?? ''}
+						onInput={(e) =>
+							updateSurveyEntries(formId, {
+								electricitySourceDistanceNote: e.target.value === '' ? null : e.target.value
+							})
+						}
+					/>
+				)}
 
 				{electricityInsight && <InsightBox text={electricityInsight} />}
 				<ValidationToggle key={formId} formId={formId} sectionKey='electricitySourceId' surveyData={surveyData} updateSurveyEntries={(formId, updates) => updateSurveyEntries(formId, updates)}/>

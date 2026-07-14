@@ -1,10 +1,11 @@
 // Di-port dari src/lib/survey-form/FormUploadTanaman.svelte (project Svelte).
 //
 // Catatan: field `plantPresences`/`plantPresenceCloudStorageUrl` baru
-// ditambahkan ke SurveyFormData (types.ts), belum ada di alur wizard yang
-// sudah berjalan. Daftar pilihan tanaman existing (plant list) juga belum
-// ada sumber datanya di project ini — lihat catatan di
-// UploadItemableImageField.tsx.
+// ditambahkan ke SurveyFormData (types.ts). Project ini belum punya sumber
+// data daftar tanaman beneran (belum ada tabel/tag `plant_type`), jadi
+// PLANT_OPTIONS di bawah cuma 5 dummy supaya perilaku dropdown-nya (pilih dari
+// daftar ATAU ketik nama baru lewat CreatableSelect) kelihatan & bisa dites —
+// timpa dengan sumber data asli begitu sudah tersedia.
 import type { ChangeEvent } from 'react';
 import { useState } from 'react';
 import { ImagePlus, Link } from 'lucide-react';
@@ -16,12 +17,18 @@ import { getErrorMessage } from '$lib/utils/error';
 import { isValidUrl } from '$lib/utils/url';
 import { isNumericString } from '$lib/utils/number';
 import { sanitizeDecimalInput } from '$lib/utils/input';
+import { DUMMY_PLANT_NAMES } from './plantOptions';
 import type { Stage1FormProps } from './types';
 
 interface SelectOption {
 	value: string;
 	label: string;
 }
+
+const PLANT_OPTIONS: SelectOption[] = DUMMY_PLANT_NAMES.map((name, i) => ({
+	value: `plant-${i + 1}`,
+	label: name
+}));
 
 export default function FormUploadTanaman({
 	formId,
@@ -143,11 +150,11 @@ export default function FormUploadTanaman({
 				</div>
 			</div>
 
-			<div className="flex text-sm rounded-full bg-gray-100 p-1 h-12">
+			<div className="flex text-sm rounded-md h-12">
 				<button
 					type="button"
-					className={`flex flex-1 items-center gap-1.5 px-4 justify-center rounded-full font-semibold transition ${
-						activeTab === 'upload' ? 'bg-white text-primary-main shadow' : 'text-neutral-4'
+					className={`flex flex-1 items-center gap-2 px-4 py-2 justify-center ${
+						activeTab === 'upload' ? 'shadow text-primary-main rounded-md' : 'text-neutral-4 bg-gray-100 rounded-l-md'
 					}`}
 					onClick={() => setActiveTab('upload')}
 				>
@@ -157,8 +164,8 @@ export default function FormUploadTanaman({
 
 				<button
 					type="button"
-					className={`flex flex-1 items-center gap-1.5 px-4 justify-center rounded-full font-semibold transition ${
-						activeTab === 'link' ? 'bg-white text-primary-main shadow' : 'text-neutral-4'
+					className={`flex flex-1 items-center gap-2 px-4 py-2 justify-center ${
+						activeTab === 'link' ? 'shadow text-primary-main rounded-md' : 'text-neutral-4 bg-gray-100 rounded-r-md'
 					}`}
 					onClick={() => setActiveTab('link')}
 				>
@@ -179,6 +186,7 @@ export default function FormUploadTanaman({
 					isUploading={isUploading}
 					itemables={plantPresences}
 					nameLabel="Tanaman Eksisting"
+					plantOptions={PLANT_OPTIONS}
 					onFileChange={uploadFile}
 					onSelectItem={handleSelectItem}
 					onRemove={onRemove}

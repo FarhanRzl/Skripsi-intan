@@ -298,7 +298,15 @@ export default function SurveyFormPage() {
 		if (!savedSurvey) return;
 
 		setEntries(savedSurvey.entries);
-		setActiveIndex(savedSurvey.entries[0]?.index);
+
+		// Kalau dibuka lewat tombol "Edit" per taman di tab Form Survey
+		// (SurveyDetailPage.tsx), ?entryIndex=<index> menentukan taman mana
+		// yang langsung aktif — supaya surveyor tidak perlu cari-cari tab
+		// taman yang mau diedit kalau tamannya lebih dari satu.
+		const params = new URLSearchParams(window.location.search);
+		const requestedIndex = params.get('entryIndex');
+		const requestedEntry = savedSurvey.entries.find((e: SurveyEntry) => e.index === requestedIndex);
+		setActiveIndex(requestedEntry ? requestedEntry.index : savedSurvey.entries[0]?.index);
 	}, [survey]);
 
 	const containerRef = useRef<HTMLElement>(null);
@@ -508,8 +516,14 @@ export default function SurveyFormPage() {
 	// masing-masing wajib diisi minimal 1 file ATAU link Drive.
 	// "Dokumentasi Lainnya" (FormDocumentationUpload) SENGAJA tidak diwajibkan,
 	// konsisten dengan schema referensi tsb.
+	//
+	// Juga mencakup Foto Akses Masuk Taman (FormAccess.tsx, `photosRequired`) —
+	// bukan section "Dokumentasi", tapi sama-sama field yang baru wajib di
+	// halaman "Edit Form Survey" ini saja (tidak wajib saat "Mulai Survey").
 	function firstEmptyDocumentationField(entry: SurveyEntry): string | null {
 		const d = entry.data;
+
+		if ((d.gardenEntranceAccessPhotos?.length ?? 0) === 0) return 'gardenEntranceAccessPhotos';
 
 		const hasAreaPhoto =
 			(d.areaPhotoImages?.length ?? 0) > 0 ||
@@ -674,18 +688,26 @@ export default function SurveyFormPage() {
 				await refetchSurvey();
 
 				// Padanan progress bar "Kelengkapan Survey" di SurveySavedScreen —
-				// gabungan Tahap 1 + section Info Tambahan yang aktif di semua taman
-				// (sama seperti activeTotalSections/activeProgress di bawah), bukan
-				// cuma taman aktif.
-				let totalPossible = 0;
+				// dihitung dari SELURUH survey yang masih perlu dilengkapi (Tahap 1 +
+				// SEMUA section Info Tambahan di katalog + Dokumentasi, bukan cuma
+				// section yang kebetulan sudah ditambahkan lewat "Tambah Isian
+				// Survey"). Kalau dihitung dari extraFields taman yang isinya masih
+				// kosong (belum ada satupun yang ditambahkan), section Info
+				// Tambahan/Dokumentasi ikut hilang dari totalnya juga — hasilnya
+				// baru submit Tahap 1 saja sudah kelihatan 100% padahal masih jauh
+				// dari lengkap. Jadi di sini SELALU pakai total penuh, sama seperti
+				// gate firstEmptyFullField di "Edit Form Survey".
+				const extraKeysFull = ALL_STAGE2_FIELD_KEYS.filter((key) => !DOCUMENTATION_STAGE2_KEYS.has(key));
+				const totalPossiblePerEntry =
+					TOTAL_SECTIONS_STAGE1 + extraKeysFull.length + TOTAL_SECTIONS_DOCUMENTATION;
 				let totalFilled = 0;
 				for (const e of updatedEntries) {
-					const extraKeys = (isOngoing ? e.extraFields : ALL_STAGE2_FIELD_KEYS).filter(
-						(key) => !DOCUMENTATION_STAGE2_KEYS.has(key)
-					);
-					totalPossible += TOTAL_SECTIONS_STAGE1 + extraKeys.length;
-					totalFilled += calcProgressStage1(e.data) + calcExtraFieldsProgress(e.data, extraKeys);
+					totalFilled +=
+						calcProgressStage1(e.data) +
+						calcExtraFieldsProgress(e.data, extraKeysFull) +
+						calcProgressDocumentation(e.data);
 				}
+				const totalPossible = updatedEntries.length * totalPossiblePerEntry;
 				setSavedScreenPercentage(
 					totalPossible > 0 ? Math.round((totalFilled / totalPossible) * 100) : 0
 				);

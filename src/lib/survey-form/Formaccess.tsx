@@ -1,10 +1,15 @@
 // Di-port dari src/lib/survey-form/FormAccess.svelte (project Svelte).
+import type { ChangeEvent } from 'react';
 import RadioCard from '$lib/components/inputs/RadioCard';
 import InfoTooltip from '$lib/components/tooltips/InfoTooltip';
 import InsightBox from './InsightBox';
 import FieldSuggestion from './FieldSuggestion';
 import { shouldSuggestField, getSuggestionGardenName, getTagTitle } from './fieldSuggestionUtils';
 import TextInput from '$lib/input-fields/TextInput';
+import Alert from '$lib/Alert';
+import UploadFileField from '$lib/components/fields/UploadFileField';
+import { useUploadFileMutation } from '$lib/stores/files';
+import { ALLOWED_IMAGE_EXTS, type FileCategory } from '$lib/constants/file';
 import { TAG_TYPES, TAG } from '$lib/constants/tag';
 import type { Stage1FormWithTagsProps } from './types';
 import ValidationToggle from './ValidationToggle';
@@ -13,13 +18,24 @@ function isOtherGardenAccessTag(tagId: string, title: string): boolean {
 	return tagId === TAG.GARDEN_ENTRANCE_ACCESS_OTHER || title.trim().toLowerCase() === 'lainnya';
 }
 
+interface FormAccessProps extends Stage1FormWithTagsProps {
+	// Upload Foto Akses Masuk Taman cuma tampil & wajib diisi di halaman "Edit
+	// Form Survey" (Tahap 2 / Lengkapi Survey) — di Tahap 1 / "Mulai Survey"
+	// (isOngoing) section ini disembunyikan total, cuma inputan pilihan akses
+	// + catatan yang tampil, konsisten dengan pola `showDetails` di
+	// Forminfrastructure.tsx.
+	photosRequired?: boolean;
+}
+
 export default function FormAccess({
 	formId,
 	surveyData,
 	tags,
+	showValidationWarning,
 	updateSurveyEntries,
-	firstGardenData
-}: Stage1FormWithTagsProps) {
+	firstGardenData,
+	photosRequired = false
+}: FormAccessProps) {
 	const homeAccessOpts = tags.filter((tag) => tag.type === TAG_TYPES.ENTRANCE_ACCESS);
 	const gardenAccessOpts = tags.filter((tag) => tag.type === TAG_TYPES.GARDEN_ENTRANCE_ACCESS);
 	const showHomeAccessSuggestion =
@@ -43,6 +59,31 @@ export default function FormAccess({
 		const selected = homeAccessOpts.find((t) => t.id === surveyData.entranceAccessId);
 		return selected?.technicalNote ?? null;
 	})();
+
+	const { mutateAsync: uploadFile, isPending: isUploadingAccessPhoto } = useUploadFileMutation();
+	const accessPhotos = surveyData.gardenEntranceAccessPhotos ?? [];
+
+	async function handleAddAccessPhoto(e: ChangeEvent<HTMLInputElement>) {
+		const files = e.target.files;
+		if (!files || files.length === 0) return;
+
+		const uploaded = await Promise.all(
+			Array.from(files).map((file) =>
+				uploadFile({ fileableType: 'designSurveyReports', file, type: 'garden_entrance_access' })
+			)
+		);
+		updateSurveyEntries(formId, {
+			gardenEntranceAccessPhotos: [...accessPhotos, ...uploaded.map((f) => ({ ...f, name: null }))]
+		});
+		e.target.value = '';
+	}
+
+	function handleRemoveAccessPhoto(fileId: string, _category?: FileCategory) {
+		void _category;
+		updateSurveyEntries(formId, {
+			gardenEntranceAccessPhotos: accessPhotos.filter((f) => f.id !== fileId)
+		});
+	}
 
 	const gardenAccessInsight = (() => {
 		if (!surveyData.gardenEntranceAccessId) return null;
@@ -142,6 +183,26 @@ export default function FormAccess({
 							})
 						}
 					/>
+				)}
+
+				{photosRequired && (
+					<div className="space-y-2" data-field={`designSurveyReports.${formId}.gardenEntranceAccessPhotos`}>
+						<p className="text-sm font-medium text-neutral-700">
+							Foto Akses Masuk Taman
+							<span className="text-danger-main"> *</span>
+						</p>
+						{accessPhotos.length === 0 && showValidationWarning && (
+							<Alert icon="error" message="Bagian ini wajib diisi. Silakan lengkapi." />
+						)}
+						<UploadFileField
+							files={accessPhotos}
+							isLoading={isUploadingAccessPhoto}
+							accept={ALLOWED_IMAGE_EXTS}
+							showImageFilename={false}
+							handleAddFile={handleAddAccessPhoto}
+							handleRemoveFile={handleRemoveAccessPhoto}
+						/>
+					</div>
 				)}
 
 				{gardenAccessInsight && <InsightBox text={gardenAccessInsight} />}
