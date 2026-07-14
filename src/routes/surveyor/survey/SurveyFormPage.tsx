@@ -41,43 +41,77 @@ import SubmitConfirmModal from '$lib/modals/SubmitConfirmModal';
 import SurveySavedScreen from './SurveySavedScreen';
 const sizeCategories = ['<= 10', '11-20', '21-30', '31-40', '41-50', '>= 51'];
 
-// Padanan calcProgressStage1/calcProgressStage2 di [slug]/form/+page.svelte —
-// 11 section Tahap 1, 6 section Tahap 2. (2 field "note" yang dipakai di
-// Svelte untuk section sun-exposure/rain-gutter Tahap 2 belum ada di model
-// data React ini, jadi section itu dihitung dari id-nya saja.)
-const TOTAL_SECTIONS_STAGE1 = 11;
-const TOTAL_SECTIONS_STAGE2 = 6;
+// Progress bar dihitung dari JUMLAH SECTION YANG BENAR-BENAR TAMPIL DI LAYAR
+// (bukan jumlah field di skema Zod) — 12 section Tahap 1 yang SELALU tampil
+// di SurveyFormV2/V3 (GardenNameForm s/d FormSoilCondition), dipecah PER
+// SECTION UI (bukan digabung per pasangan field seperti sebelumnya) supaya
+// progress naik tiap 1 section selesai diisi, bukan nunggu 2 section
+// sekaligus. fixedStructures & surveyorNote SENGAJA tidak dihitung di sini:
+// fixedStructures adalah bagian katalog Tahap 2 (opsional, lewat "Tambah
+// Isian Survey" / bagian flat di Edit Form Survey — lihat
+// isExtraFieldFilled), dan surveyorNote bukan section inline melainkan
+// fitur "Catatan Surveyor" terpisah (floating note FAB) — keduanya tidak
+// pernah tampil sebagai bagian dari komponen Tahap 1 di layar.
+const TOTAL_SECTIONS_STAGE1 = 12;
 // 3 section Dokumentasi wajib di halaman "Edit Form Survey" / SurveyFormV3 —
 // sama persis dengan yang dicek firstEmptyDocumentationField (areaPhoto,
 // plantPresence, sketch). "Dokumentasi Lainnya" sengaja tidak dihitung,
 // konsisten dengan firstEmptyDocumentationField.
 const TOTAL_SECTIONS_DOCUMENTATION = 3;
 
+// 4 key katalog Tahap 2 yang direpresentasikan sebagai section "Dokumentasi"
+// (FormAreaPhoto/FormUploadTanaman/FormSketch/FormDocumentationUpload) di
+// SurveyFormV3, BUKAN section "Info Tambahan" — progress-nya dihitung lewat
+// calcProgressDocumentation/TOTAL_SECTIONS_DOCUMENTATION, jadi dikeluarkan
+// dari hitungan section Info Tambahan supaya tidak dobel-hitung.
+const DOCUMENTATION_STAGE2_KEYS = new Set<Stage2FieldKey>([
+	'PhotoAreaId',
+	'existingPlantPhoto',
+	'sketchPhoto',
+	'otherDocumentation'
+]);
+
+const ALL_STAGE2_FIELD_KEYS = stage2QuestionCatalog.map((q) => q.key);
+
 function calcProgressStage1(data: SurveyFormData): number {
 	let filled = 0;
 	if (data.gardenName) filled++;
 	if (data.areaSize) filled++;
-	if (data.areaSunExposureTimes?.length && data.sunExposureObstructionId) filled++;
+	if (data.areaSunExposureTimes?.length) filled++;
+	if (data.sunExposureObstructionId) filled++;
 	if (data.drainageId) filled++;
-	if (data.waterSourceId && data.electricitySourceId) filled++;
-	if (data.entranceAccessId && data.gardenEntranceAccessId) filled++;
+	if (data.waterSourceId) filled++;
+	if (data.electricitySourceId) filled++;
+	if (data.entranceAccessId) filled++;
+	if (data.gardenEntranceAccessId) filled++;
 	if (data.groundSurfaceConditionId) filled++;
 	if (data.landPreparations?.length) filled++;
 	if (data.soilMoistureId) filled++;
-	if (data.fixedStructures?.length) filled++;
-	if (data.surveyorNote) filled++;
 	return filled;
 }
 
-function calcProgressStage2(data: SurveyFormData): number {
-	let filled = 0;
-	if (data.areaSunExposureId) filled++;
-	if (data.rainGutterNeedId) filled++;
-	if (data.childrenPresenceId && data.animalPresenceId) filled++;
-	if (data.careLevelId) filled++;
-	if (data.specialAreaId) filled++;
-	if (data.gardenThemeId) filled++;
-	return filled;
+// "Sudah diisi?" per section Tahap 2 / Info Tambahan (katalog
+// stage2Questions.ts) — dipakai baik utk section yang sudah ditambahkan
+// lewat "Tambah Isian Survey" (Tahap 1/isOngoing) maupun section flat di
+// Edit Form Survey (SurveyFormV3). Key Dokumentasi selalu dianggap "belum
+// terisi" di sini karena progress-nya dihitung terpisah lewat
+// calcProgressDocumentation (lihat DOCUMENTATION_STAGE2_KEYS).
+function isExtraFieldFilled(data: SurveyFormData, key: Stage2FieldKey): boolean {
+	if (key === 'fixedStructures') return (data.fixedStructures?.length ?? 0) > 0;
+	if (key === 'plantRequests') return (data.itemRequests?.length ?? 0) > 0;
+	if (
+		key === 'PhotoAreaId' ||
+		key === 'existingPlantPhoto' ||
+		key === 'sketchPhoto' ||
+		key === 'otherDocumentation'
+	) {
+		return false;
+	}
+	return Boolean(data[key]);
+}
+
+function calcExtraFieldsProgress(data: SurveyFormData, keys: Stage2FieldKey[]): number {
+	return keys.reduce((sum, key) => sum + (isExtraFieldFilled(data, key) ? 1 : 0), 0);
 }
 
 // Padanan firstEmptyDocumentationField, tapi berupa hitungan (bukan cari
@@ -357,7 +391,7 @@ export default function SurveyFormPage() {
 	function isEntryEmpty(entry: SurveyEntry) {
 		return (
 			calcProgressStage1(entry.data) === 0 &&
-			calcProgressStage2(entry.data) === 0 &&
+			calcExtraFieldsProgress(entry.data, ALL_STAGE2_FIELD_KEYS) === 0 &&
 			entry.extraFields.length === 0
 		);
 	}
@@ -640,13 +674,18 @@ export default function SurveyFormPage() {
 				await refetchSurvey();
 
 				// Padanan progress bar "Kelengkapan Survey" di SurveySavedScreen —
-				// gabungan Tahap 1 + Tahap 2 di semua taman, bukan cuma taman aktif.
-				const totalPossible =
-					updatedEntries.length * (TOTAL_SECTIONS_STAGE1 + TOTAL_SECTIONS_STAGE2);
-				const totalFilled = updatedEntries.reduce(
-					(sum, e) => sum + calcProgressStage1(e.data) + calcProgressStage2(e.data),
-					0
-				);
+				// gabungan Tahap 1 + section Info Tambahan yang aktif di semua taman
+				// (sama seperti activeTotalSections/activeProgress di bawah), bukan
+				// cuma taman aktif.
+				let totalPossible = 0;
+				let totalFilled = 0;
+				for (const e of updatedEntries) {
+					const extraKeys = (isOngoing ? e.extraFields : ALL_STAGE2_FIELD_KEYS).filter(
+						(key) => !DOCUMENTATION_STAGE2_KEYS.has(key)
+					);
+					totalPossible += TOTAL_SECTIONS_STAGE1 + extraKeys.length;
+					totalFilled += calcProgressStage1(e.data) + calcExtraFieldsProgress(e.data, extraKeys);
+				}
 				setSavedScreenPercentage(
 					totalPossible > 0 ? Math.round((totalFilled / totalPossible) * 100) : 0
 				);
@@ -688,20 +727,34 @@ export default function SurveyFormPage() {
 
 	const isOngoing = survey.status === 'ongoing';
 
-	// Di "Mulai Survey" (isOngoing, SurveyFormV2), hanya Tahap 1 yang wajib,
-	// jadi progress bar dihitung dari Tahap 1 saja.
+	// Di halaman "Edit Form Survey" (Lengkapi Survey, status `incomplete`),
+	// semua pertanyaan Tahap 2 langsung ditampilkan inline di bawah Tahap 1 —
+	// tidak lagi lewat pilih-pilih manual via "Tambah Isian Survey". Saat isi
+	// survey pertama kali (status `ongoing`), perilaku lama tetap dipakai:
+	// hanya pertanyaan yang sudah ditambahkan lewat modal yang muncul.
+	const activeExtraFieldKeys = isOngoing ? activeEntry.extraFields : ALL_STAGE2_FIELD_KEYS;
+	// Key Dokumentasi dikeluarkan dari hitungan "Info Tambahan" karena
+	// progress-nya sudah dihitung terpisah lewat calcProgressDocumentation/
+	// TOTAL_SECTIONS_DOCUMENTATION di bawah.
+	const activeExtraQuestionKeys = activeExtraFieldKeys.filter(
+		(key) => !DOCUMENTATION_STAGE2_KEYS.has(key)
+	);
+
+	// Di "Mulai Survey" (isOngoing, SurveyFormV2), hanya Tahap 1 + section
+	// Info Tambahan yang sudah ditambahkan (activeExtraQuestionKeys) yang
+	// dihitung — belum ada section Dokumentasi di flow ini.
 	//
 	// Di "Edit Form Survey" / "Lengkapi Survey" (!isOngoing, SurveyFormV3),
-	// Tahap 1 + Tahap 2 + Dokumentasi tampil FLAT sekaligus di satu halaman
-	// (lihat activeExtraFieldKeys di bawah), jadi totalnya digabung ketiganya.
-	const activeTotalSections = !isOngoing
-		? TOTAL_SECTIONS_STAGE1 + TOTAL_SECTIONS_STAGE2 + TOTAL_SECTIONS_DOCUMENTATION
-		: TOTAL_SECTIONS_STAGE1;
-	const activeProgress = !isOngoing
-		? calcProgressStage1(activeEntry.data) +
-			calcProgressStage2(activeEntry.data) +
-			calcProgressDocumentation(activeEntry.data)
-		: calcProgressStage1(activeEntry.data);
+	// Tahap 1 + SEMUA section Info Tambahan + Dokumentasi tampil FLAT
+	// sekaligus di satu halaman, jadi totalnya digabung ketiganya.
+	const activeTotalSections =
+		TOTAL_SECTIONS_STAGE1 +
+		activeExtraQuestionKeys.length +
+		(!isOngoing ? TOTAL_SECTIONS_DOCUMENTATION : 0);
+	const activeProgress =
+		calcProgressStage1(activeEntry.data) +
+		calcExtraFieldsProgress(activeEntry.data, activeExtraQuestionKeys) +
+		(!isOngoing ? calcProgressDocumentation(activeEntry.data) : 0);
 
 	// Survey `incomplete` berarti taman-tamannya sudah ditentukan & Tahap 1
 	// sudah pernah disubmit sebelumnya — jadi di sesi "Lengkapi Survey" ini
@@ -709,14 +762,6 @@ export default function SurveyFormPage() {
 	// taman baru lagi.
 	const canAddGarden = survey.status !== 'incomplete';
 	const scheduleLuxon = survey.scheduledAt ? DateTime.fromISO(survey.scheduledAt) : null;
-
-	// Di halaman "Edit Form Survey" (Lengkapi Survey, status `incomplete`),
-	// semua pertanyaan Tahap 2 langsung ditampilkan inline di bawah Tahap 1 —
-	// tidak lagi lewat pilih-pilih manual via "Tambah Isian Survey". Saat isi
-	// survey pertama kali (status `ongoing`), perilaku lama tetap dipakai:
-	// hanya pertanyaan yang sudah ditambahkan lewat modal yang muncul.
-	const allStage2FieldKeys = stage2QuestionCatalog.map((q) => q.key);
-	const activeExtraFieldKeys = isOngoing ? activeEntry.extraFields : allStage2FieldKeys;
 
 	// Tab taman — dipakai baik di layout sticky (isOngoing) maupun layout
 	// normal-flow (!isOngoing, "Edit Form Survey"). Nama taman yang panjang

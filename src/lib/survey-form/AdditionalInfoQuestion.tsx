@@ -200,6 +200,9 @@ export default function AdditionalInfoQuestion({
 					placeholder="Pilih tanggal ekspektasi build"
 					required={def.required}
 				/>
+				<p className="text-xs text-primary-main leading-snug">
+					*Rekomendasi Build Tercepat : 17 Agustus - 20 Agustus 2026
+				</p>
 				<ValidationToggle
 					key={formId}
 					formId={formId}
