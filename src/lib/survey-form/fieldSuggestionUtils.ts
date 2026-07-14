@@ -2,6 +2,7 @@
 // <FieldSuggestion /> perlu ditampilkan: field di taman aktif masih kosong,
 // tapi Taman 1 (firstGardenData) sudah punya jawaban untuk field yang sama.
 import type { Tag } from './types';
+import { TAG } from '$lib/constants/tag';
 
 // Nama taman sumber saran untuk ditampilkan di FieldSuggestion. Selalu
 // Taman 1 (firstGardenData) di alur saat ini — fallback ke "Taman 1" kalau
@@ -29,6 +30,14 @@ export function getTagTitles(tags: Tag[], ids: (string | null | undefined)[]): s
 // Format daftar jam "HH.mm" jadi teks ringkas, mis. "07.00, 08.00, 09.00".
 export function formatTimeList(times: string[] | null | undefined): string {
 	return (times ?? []).join(', ');
+}
+
+// "Tidak Tersedia" (water_source tidak punya id tetap seperti
+// TAG.ELECTRICITY_SOURCE_NONE, jadi dicocokkan lewat judul juga) — dipakai di
+// FormWaterElectricity.tsx (tampilkan/wajibkan catatan jarak) & SurveyFormPage
+// (validasi submit Lengkapi Survey) supaya kedua tempat konsisten.
+export function isSourceUnavailable(tagId: string, title: string): boolean {
+	return tagId === TAG.ELECTRICITY_SOURCE_NONE || title.trim().toLowerCase() === 'tidak tersedia';
 }
 
 export function isEmptyFieldValue(value: unknown): boolean {

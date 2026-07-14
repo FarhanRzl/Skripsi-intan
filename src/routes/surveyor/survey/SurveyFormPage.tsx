@@ -35,6 +35,7 @@ import { DesignSurveyReportStage1GateSchema } from '$types/design-survey-report-
 import { DesignSurveyReportStage2GateSchema } from '$types/design-survey-report-stage2';
 import { stage2QuestionCatalog, type Stage2FieldKey } from '$lib/survey-form/stage2Questions';
 import { requiredMessage, DEFAULT_REQUIRED_MESSAGE } from '$lib/survey-form/requiredFieldMessages';
+import { isSourceUnavailable } from '$lib/survey-form/fieldSuggestionUtils';
 import { STAGE1_TAG_TYPES, STAGE2_TAG_TYPES } from '$lib/survey-form/tagTypes';
 import { getStoredSurveys, saveStoredSurveys } from '../../../utils/storageHelper';
 import SubmitConfirmModal from '$lib/modals/SubmitConfirmModal';
@@ -517,13 +518,33 @@ export default function SurveyFormPage() {
 	// "Dokumentasi Lainnya" (FormDocumentationUpload) SENGAJA tidak diwajibkan,
 	// konsisten dengan schema referensi tsb.
 	//
-	// Juga mencakup Foto Akses Masuk Taman (FormAccess.tsx, `photosRequired`) —
-	// bukan section "Dokumentasi", tapi sama-sama field yang baru wajib di
-	// halaman "Edit Form Survey" ini saja (tidak wajib saat "Mulai Survey").
+	// Juga mencakup Foto Akses Masuk Taman (FormAccess.tsx, `photosRequired`)
+	// dan Catatan Jarak/Ukuran Sumber Air/Listrik (FormWaterElectricity.tsx,
+	// `notesRequired`) — bukan section "Dokumentasi", tapi sama-sama field
+	// yang baru wajib di halaman "Edit Form Survey" ini saja (tidak wajib
+	// saat "Mulai Survey").
 	function firstEmptyDocumentationField(entry: SurveyEntry): string | null {
 		const d = entry.data;
 
 		if ((d.gardenEntranceAccessPhotos?.length ?? 0) === 0) return 'gardenEntranceAccessPhotos';
+
+		const waterSourceTag = tags.find((t) => t.id === d.waterSourceId);
+		if (
+			waterSourceTag &&
+			!isSourceUnavailable(waterSourceTag.id, waterSourceTag.title) &&
+			!d.waterSourceDistanceNote
+		) {
+			return 'waterSourceDistanceNote';
+		}
+
+		const electricitySourceTag = tags.find((t) => t.id === d.electricitySourceId);
+		if (
+			electricitySourceTag &&
+			!isSourceUnavailable(electricitySourceTag.id, electricitySourceTag.title) &&
+			!d.electricitySourceDistanceNote
+		) {
+			return 'electricitySourceDistanceNote';
+		}
 
 		const hasAreaPhoto =
 			(d.areaPhotoImages?.length ?? 0) > 0 ||

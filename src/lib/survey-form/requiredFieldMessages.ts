@@ -44,6 +44,8 @@ export const REQUIRED_FIELD_MESSAGES: Record<string, string> = {
 
 	// ── Dokumentasi (wajib di halaman Edit Form Survey / Lengkapi Survey) ──
 	gardenEntranceAccessPhotos: 'Foto Akses Masuk Taman wajib diisi.',
+	waterSourceDistanceNote: 'Catatan Jarak/Ukuran Sumber Air wajib diisi.',
+	electricitySourceDistanceNote: 'Catatan Jarak/Ukuran Sumber Listrik wajib diisi.',
 	areaPhotoCloudStorageUrl: 'Foto Area wajib diisi (upload file atau isi link Drive).',
 	plantPresences: 'Tanaman Eksisting wajib diisi (upload file atau isi link Drive).',
 	sketchCloudStorageUrl: 'Sketch/Gambar wajib diisi (upload file atau isi link Drive).',

@@ -3,27 +3,30 @@ import RadioCard from '$lib/components/inputs/RadioCard';
 import InfoTooltip from '$lib/components/tooltips/InfoTooltip';
 import InsightBox from './InsightBox';
 import FieldSuggestion from './FieldSuggestion';
-import { shouldSuggestField, getSuggestionGardenName, getTagTitle } from './fieldSuggestionUtils';
+import { shouldSuggestField, getSuggestionGardenName, getTagTitle, isSourceUnavailable } from './fieldSuggestionUtils';
 import TextInput from '$lib/input-fields/TextInput';
-import { TAG, TAG_TYPES } from '$lib/constants/tag';
+import Alert from '$lib/Alert';
+import { TAG_TYPES } from '$lib/constants/tag';
 import type { Stage1FormWithTagsProps } from './types';
 import ValidationToggle from './ValidationToggle';
 
-// "Tidak Tersedia" (water_source tidak punya id tetap seperti
-// TAG.ELECTRICITY_SOURCE_NONE, jadi dicocokkan lewat judul juga) — kalau
-// sumbernya memang tidak ada, catatan jarak/ukuran tidak relevan buat
-// ditampilkan.
-function isSourceUnavailable(tagId: string, title: string): boolean {
-	return tagId === TAG.ELECTRICITY_SOURCE_NONE || title.trim().toLowerCase() === 'tidak tersedia';
+interface FormWaterElectricityProps extends Stage1FormWithTagsProps {
+	// Catatan Jarak/Ukuran baru wajib diisi di halaman "Edit Form Survey"
+	// (Tahap 2 / Lengkapi Survey) — di Tahap 1 / "Mulai Survey" tetap boleh
+	// diisi tapi tidak diwajibkan, konsisten dengan `photosRequired` di
+	// Formaccess.tsx.
+	notesRequired?: boolean;
 }
 
 export default function FormWaterElectricity({
 	formId,
 	surveyData,
 	tags,
+	showValidationWarning,
 	updateSurveyEntries,
-	firstGardenData
-}: Stage1FormWithTagsProps) {
+	firstGardenData,
+	notesRequired = false
+}: FormWaterElectricityProps) {
 	const waterSourceOpts = tags.filter((tag) => tag.type === TAG_TYPES.WATER_SOURCE);
 	const electricitySourceOpts = tags.filter((tag) => tag.type === TAG_TYPES.ELECTRICITY_SOURCE);
 
@@ -95,17 +98,23 @@ export default function FormWaterElectricity({
 				</div>
 
 				{showWaterDistanceNote && (
-					<TextInput
-						id={`designSurveyReports.${formId}.waterSourceDistanceNote`}
-						label="Catatan Jarak/Ukuran Sumber Air"
-						bg="white"
-						value={surveyData.waterSourceDistanceNote ?? ''}
-						onInput={(e) =>
-							updateSurveyEntries(formId, {
-								waterSourceDistanceNote: e.target.value === '' ? null : e.target.value
-							})
-						}
-					/>
+					<div className="space-y-2" data-field={`designSurveyReports.${formId}.waterSourceDistanceNote`}>
+						{notesRequired && !surveyData.waterSourceDistanceNote && showValidationWarning && (
+							<Alert icon="error" message="Bagian ini wajib diisi. Silakan lengkapi." />
+						)}
+						<TextInput
+							id={`designSurveyReports.${formId}.waterSourceDistanceNote`}
+							label="Catatan Jarak/Ukuran Sumber Air"
+							bg="white"
+							required={notesRequired}
+							value={surveyData.waterSourceDistanceNote ?? ''}
+							onInput={(e) =>
+								updateSurveyEntries(formId, {
+									waterSourceDistanceNote: e.target.value === '' ? null : e.target.value
+								})
+							}
+						/>
+					</div>
 				)}
 
 				{waterInsight && <InsightBox text={waterInsight} />}
@@ -155,17 +164,23 @@ export default function FormWaterElectricity({
 				</div>
 
 				{showElectricityDistanceNote && (
-					<TextInput
-						id={`designSurveyReports.${formId}.electricitySourceDistanceNote`}
-						label="Catatan Jarak/Ukuran Sumber Listrik"
-						bg="white"
-						value={surveyData.electricitySourceDistanceNote ?? ''}
-						onInput={(e) =>
-							updateSurveyEntries(formId, {
-								electricitySourceDistanceNote: e.target.value === '' ? null : e.target.value
-							})
-						}
-					/>
+					<div className="space-y-2" data-field={`designSurveyReports.${formId}.electricitySourceDistanceNote`}>
+						{notesRequired && !surveyData.electricitySourceDistanceNote && showValidationWarning && (
+							<Alert icon="error" message="Bagian ini wajib diisi. Silakan lengkapi." />
+						)}
+						<TextInput
+							id={`designSurveyReports.${formId}.electricitySourceDistanceNote`}
+							label="Catatan Jarak/Ukuran Sumber Listrik"
+							bg="white"
+							required={notesRequired}
+							value={surveyData.electricitySourceDistanceNote ?? ''}
+							onInput={(e) =>
+								updateSurveyEntries(formId, {
+									electricitySourceDistanceNote: e.target.value === '' ? null : e.target.value
+								})
+							}
+						/>
+					</div>
 				)}
 
 				{electricityInsight && <InsightBox text={electricityInsight} />}
