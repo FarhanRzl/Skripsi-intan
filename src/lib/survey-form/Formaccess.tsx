@@ -1,4 +1,5 @@
 // Di-port dari src/lib/survey-form/FormAccess.svelte (project Svelte).
+import { useState } from 'react';
 import type { ChangeEvent } from 'react';
 import RadioCard from '$lib/components/inputs/RadioCard';
 import InfoTooltip from '$lib/components/tooltips/InfoTooltip';
@@ -9,6 +10,7 @@ import TextInput from '$lib/input-fields/TextInput';
 import Alert from '$lib/Alert';
 import UploadFileField from '$lib/components/fields/UploadFileField';
 import { useUploadFileMutation } from '$lib/stores/files';
+import { getErrorMessage } from '$lib/utils/error';
 import { ALLOWED_IMAGE_EXTS, type FileCategory } from '$lib/constants/file';
 import { TAG_TYPES, TAG } from '$lib/constants/tag';
 import type { Stage1FormWithTagsProps } from './types';
@@ -62,19 +64,34 @@ export default function FormAccess({
 
 	const { mutateAsync: uploadFile, isPending: isUploadingAccessPhoto } = useUploadFileMutation();
 	const accessPhotos = surveyData.gardenEntranceAccessPhotos ?? [];
+	const [accessPhotoError, setAccessPhotoError] = useState<string | null>(null);
 
 	async function handleAddAccessPhoto(e: ChangeEvent<HTMLInputElement>) {
 		const files = e.target.files;
 		if (!files || files.length === 0) return;
+		setAccessPhotoError(null);
 
-		const uploaded = await Promise.all(
+		const results = await Promise.allSettled(
 			Array.from(files).map((file) =>
 				uploadFile({ fileableType: 'designSurveyReports', file, type: 'garden_entrance_access' })
 			)
 		);
-		updateSurveyEntries(formId, {
-			gardenEntranceAccessPhotos: [...accessPhotos, ...uploaded.map((f) => ({ ...f, name: null }))]
-		});
+
+		const newPhotos = [];
+		let firstError: string | null = null;
+		for (const result of results) {
+			if (result.status === 'fulfilled') {
+				newPhotos.push({ ...result.value, name: null });
+			} else if (!firstError) {
+				firstError = getErrorMessage(result.reason);
+			}
+		}
+
+		if (newPhotos.length > 0) {
+			updateSurveyEntries(formId, { gardenEntranceAccessPhotos: [...accessPhotos, ...newPhotos] });
+		}
+		if (firstError) setAccessPhotoError(firstError);
+
 		e.target.value = '';
 	}
 
@@ -194,6 +211,7 @@ export default function FormAccess({
 						{accessPhotos.length === 0 && showValidationWarning && (
 							<Alert icon="error" message="Bagian ini wajib diisi. Silakan lengkapi." />
 						)}
+						{accessPhotoError && <Alert icon="error" message={accessPhotoError} />}
 						<UploadFileField
 							files={accessPhotos}
 							isLoading={isUploadingAccessPhoto}

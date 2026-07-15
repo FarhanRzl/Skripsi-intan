@@ -18,6 +18,7 @@ import { useUploadFileMutation } from '$lib/stores/files';
 import { ALLOWED_FILE_EXTS, FILE_CATEGORY, type FileCategory } from '$lib/constants/file';
 import { getErrorMessage } from '$lib/utils/error';
 import { isValidUrl } from '$lib/utils/url';
+import type { NameableFile } from '$types/files';
 import type { Stage1FormProps } from './types';
 
 type DocumentationKey = 'areaPhotoImages' | 'areaPhotoVideos' | 'areaPhotoDocuments';
@@ -70,22 +71,33 @@ export default function FormAreaPhoto({
 		if (!eventFiles || eventFiles.length === 0) return;
 		setUploadError(null);
 
-		for (const file of Array.from(eventFiles)) {
-			try {
-				const uploaded = await uploadFile({
-					fileableType: 'designSurveyReports',
-					file,
-					type: 'survey_documentation'
-				});
+		// Upload semua file yang dipilih SEKALIGUS (Promise.allSettled), lalu
+		// gabungkan hasilnya jadi SATU updateSurveyEntries di akhir. Kalau tiap
+		// file langsung updateSurveyEntries di dalam loop (kode lama), tiap
+		// panggilan masih baca `surveyData` dari closure lama (props belum
+		// sempat ke-refresh di antara await), jadi upload berikutnya menimpa
+		// hasil upload sebelumnya — user pilih 3 foto sekaligus, yang
+		// tersimpan cuma foto terakhir ("ketumpuk").
+		const results = await Promise.allSettled(
+			Array.from(eventFiles).map((file) =>
+				uploadFile({ fileableType: 'designSurveyReports', file, type: 'survey_documentation' })
+			)
+		);
 
-				const key = keyForCategory(uploaded.category as FileCategory);
-				updateSurveyEntries(formId, {
-					[key]: [...(surveyData[key] ?? []), { ...uploaded, name: null }]
-				});
-			} catch (error) {
-				setUploadError(getErrorMessage(error));
+		const patch: Partial<Record<DocumentationKey, NameableFile[]>> = {};
+		let firstError: string | null = null;
+		for (const result of results) {
+			if (result.status === 'fulfilled') {
+				const key = keyForCategory(result.value.category as FileCategory);
+				const base = patch[key] ?? surveyData[key] ?? [];
+				patch[key] = [...base, { ...result.value, name: null }];
+			} else if (!firstError) {
+				firstError = getErrorMessage(result.reason);
 			}
 		}
+
+		if (Object.keys(patch).length > 0) updateSurveyEntries(formId, patch);
+		if (firstError) setUploadError(firstError);
 
 		e.target.value = '';
 	}

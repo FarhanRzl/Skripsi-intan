@@ -58,31 +58,39 @@ export default function FormUploadTanaman({
 		if (!files || files.length === 0) return;
 		setUploadError(null);
 
-		for (const file of Array.from(files)) {
-			try {
-				const uploaded = await uploadImage({
-					imageableType: 'designSurveyReportPlantPresences',
-					file,
-					type: 'plant_presence'
-				});
+		// Upload semua foto SEKALIGUS lalu gabung jadi SATU updateSurveyEntries
+		// di akhir — kalau tiap file langsung updateSurveyEntries di dalam loop
+		// (kode lama), tiap panggilan masih baca `plantPresences` dari closure
+		// lama (props belum ke-refresh di antara await), jadi upload berikutnya
+		// menimpa hasil upload sebelumnya ("ketumpuk", cuma foto terakhir yang
+		// tersimpan).
+		const results = await Promise.allSettled(
+			Array.from(files).map((file) =>
+				uploadImage({ imageableType: 'designSurveyReportPlantPresences', file, type: 'plant_presence' })
+			)
+		);
 
-				updateSurveyEntries(formId, {
-					plantPresences: [
-						...plantPresences,
-						{
-							itemName: '',
-							photoId: null,
-							plantId: null,
-							volume: 1,
-							denom: 'unit',
-							photo: { ...uploaded, name: null }
-						}
-					]
+		const newEntries = [];
+		let firstError: string | null = null;
+		for (const result of results) {
+			if (result.status === 'fulfilled') {
+				newEntries.push({
+					itemName: '',
+					photoId: null,
+					plantId: null,
+					volume: 1,
+					denom: 'unit',
+					photo: { ...result.value, name: null }
 				});
-			} catch (error) {
-				setUploadError(getErrorMessage(error));
+			} else if (!firstError) {
+				firstError = getErrorMessage(result.reason);
 			}
 		}
+
+		if (newEntries.length > 0) {
+			updateSurveyEntries(formId, { plantPresences: [...plantPresences, ...newEntries] });
+		}
+		if (firstError) setUploadError(firstError);
 
 		e.target.value = '';
 	}
